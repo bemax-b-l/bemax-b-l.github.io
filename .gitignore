@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+game_page.html
+.DS_Store

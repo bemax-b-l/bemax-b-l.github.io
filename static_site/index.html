@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>胖胖星球HAPPY - Team Profile</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+        <header class="hero-section">
+            <div class="hero-bg" id="hero-bg"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <div class="team-logo-container">
+                    <img id="team-logo" src="" alt="Team Logo" class="team-logo">
+                </div>
+                <h1 id="team-name" class="team-name">Loading...</h1>
+                <div class="team-stats" id="team-stats">
+                    <!-- Stats injected by JS -->
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <section class="schedule-section">
+                <h2 class="section-title">Recent Schedule</h2>
+                <div class="schedule-container">
+                    <table class="schedule-table" id="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Opponent</th>
+                                <th>Result</th>
+                                <th>Score</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Schedule injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="roster-section">
+                <h2 class="section-title">Team Roster</h2>
+                <div class="roster-grid" id="roster-grid">
+                    <!-- Players injected by JS -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 胖胖星球HAPPY. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Game Detail Modal -->
+    <div id="game-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modal-title">Game Details</h2>
+
+            <div class="modal-section">
+                <h3>Quarter Scores</h3>
+                <table id="quarter-table" class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Q1</th>
+                            <th>Q2</th>
+                            <th>Q3</th>
+                            <th>Q4</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="modal-section">
+                <h3>Box Score</h3>
+                <div class="table-responsive">
+                    <table id="box-score-table" class="detail-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>PTS</th>
+                                <th>REB</th>
+                                <th>AST</th>
+                                <th>STL</th>
+                                <th>BLK</th>
+                                <th>PF</th>
+                                <th>TO</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
