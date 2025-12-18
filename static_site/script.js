@@ -3,20 +3,129 @@ const DATA_URL = './team_data.csv'; // Replace with Google Sheet CSV URL later
 const SCHEDULE_URL = './schedule_data.csv';
 const GAMES_QUARTER_URL = './games_quarter_scores.csv';
 const GAMES_BOX_URL = './games_box_scores.csv';
+const PLAYER_STATS_URL = './player_stats.csv';
 
 let gamesDetails = {};
+let playerStats = {};
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await loadTeamInfo();
         await loadGamesDetails();
+        await loadPlayerStats();
         await loadSchedule();
         await loadRoster();
         setupModal();
+        setupPlayerModal();
     } catch (error) {
         console.error('Error loading data:', error);
     }
 });
+
+async function loadPlayerStats() {
+    try {
+        const response = await fetch(PLAYER_STATS_URL);
+        const csvText = await response.text();
+        const stats = parseCSV(csvText);
+
+        // Group by PlayerName (or ID if available in roster, but currently roster only has Name/Number)
+        // We will use Name as key for simplicity since roster CSV doesn't have ID
+        playerStats = {};
+        stats.forEach(row => {
+            const name = row.PlayerName;
+            if (!playerStats[name]) {
+                playerStats[name] = [];
+            }
+            playerStats[name].push(row);
+        });
+    } catch (e) {
+        console.warn("Could not load player stats", e);
+    }
+}
+
+// ... (loadGamesDetails and loadTeamInfo remain same)
+
+async function loadRoster() {
+    const response = await fetch(DATA_URL);
+    const csvText = await response.text();
+    const players = parseCSV(csvText);
+
+    const rosterGrid = document.getElementById('roster-grid');
+    rosterGrid.innerHTML = '';
+
+    players.forEach(player => {
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        card.onclick = () => openPlayerModal(player.Name); // Add click handler
+        card.style.cursor = 'pointer'; // Make it look clickable
+
+        // Use a default image if Photo is empty or invalid
+        const photoUrl = player.Photo && player.Photo.trim() !== '' ? player.Photo : 'https://via.placeholder.com/400x400?text=No+Image';
+
+        card.innerHTML = `
+            <div class="player-image-container">
+                <img src="${photoUrl}" alt="${player.Name}" class="player-image" loading="lazy" onerror="this.src='https://via.placeholder.com/400x400?text=Error'">
+            </div>
+            <div class="player-info">
+                <div class="player-number">#${player.Number}</div>
+                <div class="player-name">${player.Name}</div>
+            </div>
+        `;
+        rosterGrid.appendChild(card);
+    });
+}
+
+function openPlayerModal(playerName) {
+    const stats = playerStats[playerName];
+    if (!stats || stats.length === 0) {
+        alert("No stats available for " + playerName);
+        return;
+    }
+
+    const modal = document.getElementById('player-modal');
+    document.getElementById('player-modal-title').textContent = `${playerName} - Stats`;
+
+    const tbody = document.querySelector('#player-stats-table tbody');
+    tbody.innerHTML = '';
+
+    stats.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${s.Date}</td>
+            <td>${s.Opponent}</td>
+            <td>${s.PTS}</td>
+            <td>${s.REB}</td>
+            <td>${s.AST}</td>
+            <td>${s.STL}</td>
+            <td>${s.BLK}</td>
+            <td>${s.PF}</td>
+            <td>${s.TO}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    modal.style.display = 'block';
+}
+
+function closePlayerModal() {
+    document.getElementById('player-modal').style.display = 'none';
+}
+
+function setupPlayerModal() {
+    const modal = document.getElementById('player-modal');
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+        // Also handle game modal closing here if needed, or keep separate
+        const gameModal = document.getElementById('game-modal');
+        if (event.target == gameModal) {
+            gameModal.style.display = "none";
+        }
+    }
+    // Expose to window
+    window.closePlayerModal = closePlayerModal;
+}
 
 async function loadGamesDetails() {
     try {
@@ -197,36 +306,7 @@ function setupModal() {
     window.openGameModal = openGameModal;
 }
 
-async function loadRoster() {
-    const response = await fetch(DATA_URL);
-    const csvText = await response.text();
-    const players = parseCSV(csvText);
 
-    const rosterGrid = document.getElementById('roster-grid');
-    rosterGrid.innerHTML = '';
-
-    players.forEach(player => {
-        if (!player.Name) return; // Skip empty lines
-
-        const card = document.createElement('div');
-        card.className = 'player-card';
-
-        // Use a default image if Photo is empty or invalid
-        const photoUrl = player.Photo && player.Photo.trim() !== '' ? player.Photo : 'https://via.placeholder.com/400x400?text=No+Image';
-
-        card.innerHTML = `
-            <div class="player-image-container">
-                <img src="${photoUrl}" alt="${player.Name}" class="player-image" onerror="this.src='https://via.placeholder.com/400x400?text=Error'">
-            </div>
-            <div class="player-info">
-                <div class="player-number">${player.Number}</div>
-                <div class="player-name">${player.Name}</div>
-                <div class="player-meta">Player</div>
-            </div>
-        `;
-        rosterGrid.appendChild(card);
-    });
-}
 
 function parseCSV(text) {
     const lines = text.split('\n');

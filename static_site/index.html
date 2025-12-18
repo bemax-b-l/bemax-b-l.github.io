@@ -108,6 +108,36 @@
         </div>
     </div>
 
+    <!-- Player Detail Modal -->
+    <div id="player-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closePlayerModal()">&times;</span>
+            <h2 id="player-modal-title">Player Stats</h2>
+
+            <div class="modal-section">
+                <h3>Game Log</h3>
+                <div class="table-responsive">
+                    <table id="player-stats-table" class="detail-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Opponent</th>
+                                <th>PTS</th>
+                                <th>REB</th>
+                                <th>AST</th>
+                                <th>STL</th>
+                                <th>BLK</th>
+                                <th>PF</th>
+                                <th>TO</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 

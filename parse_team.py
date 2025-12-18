@@ -64,6 +64,12 @@ def parse_team_data(html_file):
             name_match = re.search(r'<div class="player-name">(.*?)</div>', item)
             number_match = re.search(r'<div class="other-info">\s*#(.*?)</div>', item)
             
+            # Extract Link
+            link_match = re.search(r'<a href="/?(index\.php\?q=tools&act=player-info&id=\d+)"', item)
+            link = link_match.group(1) if link_match else ""
+            if link:
+                link = 'https://basketball.biji.co/' + link
+
             # Try to find data-original first (lazy loaded image)
             photo_match_lazy = re.search(r'data-original="(.*?)"', item)
             if photo_match_lazy:
@@ -85,7 +91,8 @@ def parse_team_data(html_file):
             players.append({
                 'Name': name,
                 'Number': number,
-                'Photo': local_photo
+                'Photo': local_photo,
+                'Link': link
             })
             
             # Be nice to the server
@@ -93,7 +100,7 @@ def parse_team_data(html_file):
 
     # Output to CSV
     with open('static_site/team_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['Name', 'Number', 'Photo']
+        fieldnames = ['Name', 'Number', 'Photo', 'Link']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for player in players:
@@ -291,6 +298,89 @@ def parse_team_data(html_file):
     print(f"Team Name: {team_name}")
     print("Images downloaded to static_site/images/")
     print("Data saved to CSV files in static_site/")
+
+    # Scrape Player Stats
+    print("Scraping player stats (this may take a while)...")
+    player_stats = []
+    
+    for player in players:
+        link = player.get('Link')
+        if not link:
+            continue
+        
+        # Extract player ID from link
+        player_id_match = re.search(r'id=(\d+)', link)
+        player_id = player_id_match.group(1) if player_id_match else "unknown"
+        
+        print(f"Processing player {player['Name']} ({player_id})...")
+        
+        try:
+            req = urllib.request.Request(link, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response:
+                player_html = response.read().decode('utf-8')
+            
+            # Parse Player Record Table
+            # Look for table with class "statistics-data-item"
+            stats_table_match = re.search(r'<table class="statistics-data-item.*?>(.*?)</table>', player_html, re.DOTALL)
+            if stats_table_match:
+                rows = re.findall(r'<tr class="statistics-data-(?:odd|double)">(.*?)</tr>', stats_table_match.group(1), re.DOTALL)
+                
+                for row in rows:
+                    cols = re.findall(r'<td.*?>(.*?)</td>', row, re.DOTALL)
+                    # Clean cols
+                    clean_cols = []
+                    for col in cols:
+                        clean_cols.append(re.sub(r'<.*?>', '', col).strip())
+                    
+                    # Expected columns based on HTML analysis:
+                    # 0: Date/Time (e.g. 2019/05/28 20:50)
+                    # 1: Opponent (Team Name)
+                    # 2: Personal Score
+                    # 3: Record Type
+                    # 4-6: 2P
+                    # 7-9: 3P
+                    # 10-12: FT
+                    # 13-15: Reb (Off, Def, Total)
+                    # 16: Ast
+                    # 17: Stl
+                    # 18: Blk
+                    # 19: Foul
+                    # 20: TO
+                    
+                    if len(clean_cols) >= 21:
+                        # Extract date part only
+                        date = clean_cols[0].split()[0]
+                        opponent = clean_cols[1].replace('快樂聯盟冠軍賽', '').replace('快樂聯盟季後賽', '').replace('快樂聯盟例行賽', '').strip()
+                        
+                        player_stats.append({
+                            'PlayerID': player_id,
+                            'PlayerName': player['Name'],
+                            'Date': date,
+                            'Opponent': opponent,
+                            'PTS': clean_cols[2],
+                            'REB': clean_cols[15],
+                            'AST': clean_cols[16],
+                            'STL': clean_cols[17],
+                            'BLK': clean_cols[18],
+                            'PF': clean_cols[19],
+                            'TO': clean_cols[20]
+                        })
+            
+            time.sleep(0.5)
+            
+        except Exception as e:
+            print(f"Failed to parse player {player['Name']}: {e}")
+
+    # Output Player Stats to CSV
+    with open('static_site/player_stats.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['PlayerID', 'PlayerName', 'Date', 'Opponent', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'PF', 'TO']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for stat in player_stats:
+            writer.writerow(stat)
+            
+    print(f"Parsed stats for {len(player_stats)} games across all players.")
+
 
 if __name__ == "__main__":
     parse_team_data('page.html')
