@@ -100,11 +100,15 @@ def parse_team_data(html_file):
 
     # Output to CSV
     with open('static_site/team_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['Name', 'Number', 'Photo', 'Link']
+        fieldnames = ['姓名', '號碼', '照片']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for player in players:
-            writer.writerow(player)
+            writer.writerow({
+                '姓名': player['Name'],
+                '號碼': player['Number'],
+                '照片': player['Photo']
+            })
 
 
 
@@ -140,11 +144,22 @@ def parse_team_data(html_file):
 
     # Output Schedule to CSV
     with open('static_site/schedule_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['Date', 'Opponent', 'Result', 'Score', 'Link']
+        fieldnames = ['日期', '對手', '結果', '比分', '賽事編號']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for game in schedule:
-            writer.writerow(game)
+            # Extract GameID from Link
+            game_id = ''
+            if game['Link']:
+                game_id_match = re.search(r'id=(\d+)', game['Link'])
+                game_id = game_id_match.group(1) if game_id_match else ''
+            writer.writerow({
+                '日期': game['Date'],
+                '對手': game['Opponent'],
+                '結果': game['Result'],
+                '比分': game['Score'],
+                '賽事編號': game_id
+            })
 
     # Scrape Game Details
     games_details = {}
@@ -223,6 +238,17 @@ def parse_team_data(html_file):
                         player_stat = {
                             'player': full_name,
                             'points': clean_cells[2],
+                            'fg2_made': clean_cells[3],
+                            'fg2_attempt': clean_cells[4],
+                            'fg2_pct': clean_cells[5],
+                            'fg3_made': clean_cells[6],
+                            'fg3_attempt': clean_cells[7],
+                            'fg3_pct': clean_cells[8],
+                            'ft_made': clean_cells[9],
+                            'ft_attempt': clean_cells[10],
+                            'ft_pct': clean_cells[11],
+                            'reb_off': clean_cells[12],
+                            'reb_def': clean_cells[13],
                             'reb': clean_cells[14],
                             'ast': clean_cells[15],
                             'stl': clean_cells[16],
@@ -244,52 +270,65 @@ def parse_team_data(html_file):
 
     # Output Team Info to CSV (replacing team_metadata.json)
     with open('static_site/team_info.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['TeamName', 'Logo', 'Cover', 'PPG', 'RPG', 'APG', 'OPPG']
+        fieldnames = ['球隊名稱', '隊徽', '封面', '場均得分', '場均籃板', '場均助攻', '場均失分']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerow({
-            'TeamName': team_name,
-            'Logo': team_logo,
-            'Cover': team_cover,
-            'PPG': stats.get('PPG', ''),
-            'RPG': stats.get('RPG', ''),
-            'APG': stats.get('APG', ''),
-            'OPPG': stats.get('OPPG', '')
+            '球隊名稱': team_name,
+            '隊徽': team_logo,
+            '封面': team_cover,
+            '場均得分': stats.get('PPG', ''),
+            '場均籃板': stats.get('RPG', ''),
+            '場均助攻': stats.get('APG', ''),
+            '場均失分': stats.get('OPPG', '')
         })
 
     # Output Games Data to CSVs (replacing games_data.json)
     # 1. Quarter Scores
     with open('static_site/games_quarter_scores.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['GameID', 'Team', 'Q1', 'Q2', 'Q3', 'Q4']
+        fieldnames = ['賽事編號', '球隊', '第一節', '第二節', '第三節', '第四節']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         
         for game_id, details in games_details.items():
             for q in details['quarter_scores']:
-                row = {'GameID': game_id, 'Team': q['team']}
+                row = {'賽事編號': game_id, '球隊': q['team']}
+                quarters = ['第一節', '第二節', '第三節', '第四節']
                 for i, score in enumerate(q['scores']):
                     if i < 4:
-                        row[f'Q{i+1}'] = score
+                        row[quarters[i]] = score
                 writer.writerow(row)
 
     # 2. Box Scores
     with open('static_site/games_box_scores.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['GameID', 'Player', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'PF', 'TO']
+        fieldnames = ['賽事編號', '球員', '得分', '兩分球進', '兩分球投', '兩分球%', '三分球進', '三分球投', '三分球%', 
+                      '罰球進', '罰球投', '罰球%', '進攻籃板', '防守籃板', '籃板', '助攻', '抄截', '阻攻', '犯規', '失誤']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         
         for game_id, details in games_details.items():
             for p in details['box_score']:
                 writer.writerow({
-                    'GameID': game_id,
-                    'Player': p['player'],
-                    'PTS': p['points'],
-                    'REB': p['reb'],
-                    'AST': p['ast'],
-                    'STL': p['stl'],
-                    'BLK': p['blk'],
-                    'PF': p['foul'],
-                    'TO': p['to']
+                    '賽事編號': game_id,
+                    '球員': p['player'],
+                    '得分': p['points'],
+                    '兩分球進': p.get('fg2_made', ''),
+                    '兩分球投': p.get('fg2_attempt', ''),
+                    '兩分球%': p.get('fg2_pct', ''),
+                    '三分球進': p.get('fg3_made', ''),
+                    '三分球投': p.get('fg3_attempt', ''),
+                    '三分球%': p.get('fg3_pct', ''),
+                    '罰球進': p.get('ft_made', ''),
+                    '罰球投': p.get('ft_attempt', ''),
+                    '罰球%': p.get('ft_pct', ''),
+                    '進攻籃板': p.get('reb_off', ''),
+                    '防守籃板': p.get('reb_def', ''),
+                    '籃板': p['reb'],
+                    '助攻': p['ast'],
+                    '抄截': p['stl'],
+                    '阻攻': p['blk'],
+                    '犯規': p['foul'],
+                    '失誤': p['to']
                 })
 
     print(f"Parsed {len(players)} players.")
@@ -358,6 +397,17 @@ def parse_team_data(html_file):
                             'Date': date,
                             'Opponent': opponent,
                             'PTS': clean_cols[2],
+                            'FG2M': clean_cols[4],
+                            'FG2A': clean_cols[5],
+                            'FG2PCT': clean_cols[6],
+                            'FG3M': clean_cols[7],
+                            'FG3A': clean_cols[8],
+                            'FG3PCT': clean_cols[9],
+                            'FTM': clean_cols[10],
+                            'FTA': clean_cols[11],
+                            'FTPCT': clean_cols[12],
+                            'OREB': clean_cols[13],
+                            'DREB': clean_cols[14],
                             'REB': clean_cols[15],
                             'AST': clean_cols[16],
                             'STL': clean_cols[17],
@@ -373,11 +423,36 @@ def parse_team_data(html_file):
 
     # Output Player Stats to CSV
     with open('static_site/player_stats.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['PlayerID', 'PlayerName', 'Date', 'Opponent', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'PF', 'TO']
+        fieldnames = ['球員編號', '球員姓名', '日期', '對手', '得分', '兩分球進', '兩分球投', '兩分球%', 
+                      '三分球進', '三分球投', '三分球%', '罰球進', '罰球投', '罰球%', 
+                      '進攻籃板', '防守籃板', '籃板', '助攻', '抄截', '阻攻', '犯規', '失誤']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for stat in player_stats:
-            writer.writerow(stat)
+            writer.writerow({
+                '球員編號': stat['PlayerID'],
+                '球員姓名': stat['PlayerName'],
+                '日期': stat['Date'],
+                '對手': stat['Opponent'],
+                '得分': stat['PTS'],
+                '兩分球進': stat.get('FG2M', ''),
+                '兩分球投': stat.get('FG2A', ''),
+                '兩分球%': stat.get('FG2PCT', ''),
+                '三分球進': stat.get('FG3M', ''),
+                '三分球投': stat.get('FG3A', ''),
+                '三分球%': stat.get('FG3PCT', ''),
+                '罰球進': stat.get('FTM', ''),
+                '罰球投': stat.get('FTA', ''),
+                '罰球%': stat.get('FTPCT', ''),
+                '進攻籃板': stat.get('OREB', ''),
+                '防守籃板': stat.get('DREB', ''),
+                '籃板': stat['REB'],
+                '助攻': stat['AST'],
+                '抄截': stat['STL'],
+                '阻攻': stat['BLK'],
+                '犯規': stat['PF'],
+                '失誤': stat['TO']
+            })
             
     print(f"Parsed stats for {len(player_stats)} games across all players.")
 

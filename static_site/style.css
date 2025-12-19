@@ -169,15 +169,35 @@ body {
     border-radius: 1.5rem;
     overflow: hidden;
     position: relative;
-    transition: all 0.4s ease;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--card-bg);
+    z-index: 1;
 }
 
 .player-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-    border-color: var(--secondary-color);
+    transform: translateY(-15px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 107, 0, 0.2);
+    border-color: var(--primary-color);
+}
+
+.player-bg-number {
+    position: absolute;
+    top: -20px;
+    left: -10px;
+    font-size: 10rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.03);
+    line-height: 1;
+    z-index: 0;
+    pointer-events: none;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.5s ease;
+}
+
+.player-card:hover .player-bg-number {
+    color: rgba(255, 255, 255, 0.07);
+    transform: scale(1.1) rotate(-5deg);
 }
 
 .player-image-container {
@@ -202,24 +222,35 @@ body {
 .player-info {
     padding: 1.5rem;
     position: relative;
-    background: linear-gradient(to top, var(--card-bg) 0%, rgba(30, 41, 59, 0.8) 100%);
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 2;
 }
 
 .player-number {
     position: absolute;
-    top: -2rem;
+    top: -2.5rem;
     right: 1.5rem;
     background: var(--primary-color);
     color: white;
-    width: 3rem;
-    height: 3rem;
+    width: 3.5rem;
+    height: 3.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    font-weight: 700;
-    font-size: 1.25rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    transform: rotate(5deg);
+    transition: all 0.3s ease;
+    z-index: 3;
+}
+
+.player-card:hover .player-number {
+    transform: rotate(0deg) scale(1.1);
+    background: var(--secondary-color);
 }
 
 .player-name {
@@ -273,8 +304,9 @@ footer {
     overflow-x: auto;
     background: var(--card-bg);
     border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .schedule-table {
@@ -287,23 +319,24 @@ footer {
 .schedule-table td {
     padding: 1rem;
     text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .schedule-table th {
-    color: var(--text-muted);
-    font-weight: 600;
+    background: #111827;
+    color: var(--primary-color);
+    font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.875rem;
-    letter-spacing: 1px;
+    font-size: 0.8rem;
+    letter-spacing: 1.5px;
 }
 
-.schedule-table tr:last-child td {
-    border-bottom: none;
+.schedule-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .schedule-table tr:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .win {
@@ -386,22 +419,44 @@ footer {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 1rem;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .detail-table th,
 .detail-table td {
-    padding: 0.75rem;
+    padding: 0.6rem 0.4rem;
     text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.detail-table th {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-muted);
+.detail-table thead tr:first-child th {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.detail-table tr:hover {
+.detail-table thead tr:nth-child(2) th {
+    background: #111827;
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.detail-table tbody tr:nth-child(even) {
     background: rgba(255, 255, 255, 0.02);
+}
+
+.detail-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.detail-table [rowspan] {
+    background: #111827;
+    font-weight: 600;
 }
 
 .details-btn {
@@ -437,4 +492,73 @@ footer {
 
 .player-card:active {
     transform: translateY(-2px);
+}
+
+/* Player Profile in Modal */
+.player-profile-section {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-profile-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--primary-color);
+    flex-shrink: 0;
+}
+
+#player-modal-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+}
+
+.player-profile-info h2 {
+    margin: 0 0 1rem 0;
+    font-size: 2rem;
+    color: var(--text-color);
+}
+
+.player-averages {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.avg-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.avg-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    font-family: 'Outfit', sans-serif;
+}
+
+.avg-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+    .player-profile-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .player-averages {
+        justify-content: center;
+    }
 }

@@ -7,6 +7,7 @@ const PLAYER_STATS_URL = './player_stats.csv';
 
 let gamesDetails = {};
 let playerStats = {};
+let playerRoster = {}; // Store player roster data (name -> {photo, number})
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -32,7 +33,7 @@ async function loadPlayerStats() {
         // We will use Name as key for simplicity since roster CSV doesn't have ID
         playerStats = {};
         stats.forEach(row => {
-            const name = row.PlayerName;
+            const name = row.球員姓名;
             if (!playerStats[name]) {
                 playerStats[name] = [];
             }
@@ -54,21 +55,28 @@ async function loadRoster() {
     rosterGrid.innerHTML = '';
 
     players.forEach(player => {
+        // Store in global roster for modal use
+        playerRoster[player.姓名] = {
+            photo: player.照片,
+            number: player.號碼
+        };
+
         const card = document.createElement('div');
         card.className = 'player-card';
-        card.onclick = () => openPlayerModal(player.Name); // Add click handler
+        card.onclick = () => openPlayerModal(player.姓名); // Add click handler
         card.style.cursor = 'pointer'; // Make it look clickable
 
         // Use a default image if Photo is empty or invalid
-        const photoUrl = player.Photo && player.Photo.trim() !== '' ? player.Photo : 'https://via.placeholder.com/400x400?text=No+Image';
+        const photoUrl = player.照片 && player.照片.trim() !== '' ? player.照片 : 'https://via.placeholder.com/400x400?text=No+Image';
 
         card.innerHTML = `
+            <div class="player-bg-number">${player.號碼}</div>
             <div class="player-image-container">
-                <img src="${photoUrl}" alt="${player.Name}" class="player-image" loading="lazy" onerror="this.src='https://via.placeholder.com/400x400?text=Error'">
+                <img src="${photoUrl}" alt="${player.姓名}" class="player-image" loading="lazy" onerror="this.src='https://via.placeholder.com/400x400?text=Error'">
             </div>
             <div class="player-info">
-                <div class="player-number">#${player.Number}</div>
-                <div class="player-name">${player.Name}</div>
+                <div class="player-number">#${player.號碼}</div>
+                <div class="player-name">${player.姓名}</div>
             </div>
         `;
         rosterGrid.appendChild(card);
@@ -83,23 +91,64 @@ function openPlayerModal(playerName) {
     }
 
     const modal = document.getElementById('player-modal');
-    document.getElementById('player-modal-title').textContent = `${playerName} - Stats`;
+
+    // Set Name and Photo
+    document.getElementById('player-modal-name').textContent = playerName;
+    const playerInfo = playerRoster[playerName] || {};
+    const photoUrl = playerInfo.photo && playerInfo.photo.trim() !== '' ? playerInfo.photo : 'https://via.placeholder.com/400x400?text=No+Image';
+    document.getElementById('player-modal-photo').src = photoUrl;
+
+    // Calculate Averages
+    let totalPts = 0, totalReb = 0, totalAst = 0;
+    stats.forEach(s => {
+        totalPts += parseFloat(s.得分) || 0;
+        totalReb += parseFloat(s.籃板) || 0;
+        totalAst += parseFloat(s.助攻) || 0;
+    });
+    const count = stats.length;
+    document.getElementById('avg-pts').textContent = (totalPts / count).toFixed(1);
+    document.getElementById('avg-reb').textContent = (totalReb / count).toFixed(1);
+    document.getElementById('avg-ast').textContent = (totalAst / count).toFixed(1);
 
     const tbody = document.querySelector('#player-stats-table tbody');
     tbody.innerHTML = '';
 
     stats.forEach(s => {
+        // Split date and time
+        let dateDisplay = s.日期;
+        if (s.日期 && s.日期.includes(' ')) {
+            const parts = s.日期.split(' ');
+            dateDisplay = `${parts[0]}<br>${parts[1]}`;
+        } else if (s.日期) {
+            // Handle format like "2019/05/2820:50"
+            const match = s.日期.match(/^(\d{4}\/\d{2}\/\d{2})(\d{2}:\d{2})$/);
+            if (match) {
+                dateDisplay = `${match[1]}<br>${match[2]}`;
+            }
+        }
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${s.Date}</td>
-            <td>${s.Opponent}</td>
-            <td>${s.PTS}</td>
-            <td>${s.REB}</td>
-            <td>${s.AST}</td>
-            <td>${s.STL}</td>
-            <td>${s.BLK}</td>
-            <td>${s.PF}</td>
-            <td>${s.TO}</td>
+            <td>${dateDisplay}</td>
+            <td>${s.對手}</td>
+            <td>${s.得分}</td>
+            <td>${s.兩分球進 || '-'}</td>
+            <td>${s.兩分球投 || '-'}</td>
+            <td>${s['兩分球%'] || '-'}</td>
+            <td>${s.三分球進 || '-'}</td>
+            <td>${s.三分球投 || '-'}</td>
+            <td>${s['三分球%'] || '-'}</td>
+            <td>${s.罰球進 || '-'}</td>
+            <td>${s.罰球投 || '-'}</td>
+            <td>${s['罰球%'] || '-'}</td>
+            <td>${s.進攻籃板 || '-'}</td>
+            <td>${s.防守籃板 || '-'}</td>
+            <td>${s.籃板}</td>
+            <td>${s.助攻}</td>
+            <td>${s.抄截}</td>
+            <td>${s.阻攻}</td>
+            <td>${s.犯規}</td>
+            <td>${s.失誤}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -143,30 +192,41 @@ async function loadGamesDetails() {
         gamesDetails = {};
 
         quarterScores.forEach(row => {
-            const gameId = row.GameID;
+            const gameId = row.賽事編號;
             if (!gamesDetails[gameId]) {
                 gamesDetails[gameId] = { quarter_scores: [], box_score: [] };
             }
             gamesDetails[gameId].quarter_scores.push({
-                team: row.Team,
-                scores: [row.Q1, row.Q2, row.Q3, row.Q4]
+                team: row.球隊,
+                scores: [row.第一節, row.第二節, row.第三節, row.第四節]
             });
         });
 
         boxScores.forEach(row => {
-            const gameId = row.GameID;
+            const gameId = row.賽事編號;
             if (!gamesDetails[gameId]) {
                 gamesDetails[gameId] = { quarter_scores: [], box_score: [] };
             }
             gamesDetails[gameId].box_score.push({
-                player: row.Player,
-                points: row.PTS,
-                reb: row.REB,
-                ast: row.AST,
-                stl: row.STL,
-                blk: row.BLK,
-                foul: row.PF,
-                to: row.TO
+                player: row.球員,
+                points: row.得分,
+                fg2m: row.兩分球進 || '',
+                fg2a: row.兩分球投 || '',
+                fg2pct: row['兩分球%'] || '',
+                fg3m: row.三分球進 || '',
+                fg3a: row.三分球投 || '',
+                fg3pct: row['三分球%'] || '',
+                ftm: row.罰球進 || '',
+                fta: row.罰球投 || '',
+                ftpct: row['罰球%'] || '',
+                oreb: row.進攻籃板 || '',
+                dreb: row.防守籃板 || '',
+                reb: row.籃板,
+                ast: row.助攻,
+                stl: row.抄截,
+                blk: row.阻攻,
+                foul: row.犯規,
+                to: row.失誤
             });
         });
 
@@ -183,19 +243,19 @@ async function loadTeamInfo() {
     if (dataList.length === 0) return;
     const data = dataList[0];
 
-    document.title = `${data.TeamName} - Team Profile`;
-    document.getElementById('team-name').textContent = data.TeamName;
-    document.getElementById('team-logo').src = data.Logo;
-    document.getElementById('hero-bg').style.backgroundImage = `url('${data.Cover}')`;
+    document.title = `${data.球隊名稱} - Team Profile`;
+    document.getElementById('team-name').textContent = data.球隊名稱;
+    document.getElementById('team-logo').src = data.隊徽;
+    document.getElementById('hero-bg').style.backgroundImage = `url('${data.封面}')`;
 
     const statsContainer = document.getElementById('team-stats');
     statsContainer.innerHTML = '';
 
     const stats = {
-        'PPG': data.PPG,
-        'RPG': data.RPG,
-        'APG': data.APG,
-        'OPPG': data.OPPG
+        'PPG': data.場均得分,
+        'RPG': data.場均籃板,
+        'APG': data.場均助攻,
+        'OPPG': data.場均失分
     };
 
     for (const [key, value] of Object.entries(stats)) {
@@ -219,31 +279,27 @@ async function loadSchedule() {
     tableBody.innerHTML = '';
 
     games.forEach(game => {
-        if (!game.Date) return;
+        if (!game.日期) return;
 
         const row = document.createElement('tr');
 
         // Style result
         let resultClass = '';
-        if (game.Result === '勝') resultClass = 'win';
-        else if (game.Result === '敗') resultClass = 'loss';
+        if (game.結果 === '勝') resultClass = 'win';
+        else if (game.結果 === '敗') resultClass = 'loss';
 
-        // Extract ID from link
-        let gameId = '';
-        if (game.Link) {
-            const match = game.Link.match(/id=(\d+)/);
-            if (match) gameId = match[1];
-        }
+        // Use GameID directly from CSV
+        const gameId = game.賽事編號 || '';
 
         row.innerHTML = `
-            <td>${game.Date}</td>
-            <td>${game.Opponent}</td>
-            <td class="${resultClass}">${game.Result}</td>
-            <td>${game.Score}</td>
+            <td>${game.日期}</td>
+            <td>${game.對手}</td>
+            <td class="${resultClass}">${game.結果}</td>
+            <td>${game.比分}</td>
             <td>
                 ${gameId && gamesDetails[gameId] ?
                 `<button class="details-btn" onclick="openGameModal('${gameId}')">View Stats</button>` :
-                (game.Link ? `<a href="${game.Link}" target="_blank" class="details-link">External Link</a>` : '-')}
+                '-'}
             </td>
         `;
         tableBody.appendChild(row);
@@ -275,6 +331,17 @@ function openGameModal(gameId) {
         tr.innerHTML = `
             <td>${p.player}</td>
             <td>${p.points}</td>
+            <td>${p.fg2m || '-'}</td>
+            <td>${p.fg2a || '-'}</td>
+            <td>${p.fg2pct || '-'}</td>
+            <td>${p.fg3m || '-'}</td>
+            <td>${p.fg3a || '-'}</td>
+            <td>${p.fg3pct || '-'}</td>
+            <td>${p.ftm || '-'}</td>
+            <td>${p.fta || '-'}</td>
+            <td>${p.ftpct || '-'}</td>
+            <td>${p.oreb || '-'}</td>
+            <td>${p.dreb || '-'}</td>
             <td>${p.reb}</td>
             <td>${p.ast}</td>
             <td>${p.stl}</td>
