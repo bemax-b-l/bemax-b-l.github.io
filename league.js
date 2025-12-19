@@ -1,4 +1,4 @@
-const SEASONS_DATA_URL = './seasons_data.csv';
+const SEASONS_DATA_URL = './data/seasons_data.csv';
 
 let allSeasonsData = [];
 

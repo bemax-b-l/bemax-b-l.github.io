@@ -12,10 +12,10 @@ This is a static website for the basketball team "胖胖星球HAPPY".
         Then visit `http://localhost:8000`.
 
 2.  **Google Sheets Integration**:
-    *   Upload the content of `team_data.csv` to a Google Sheet.
+    *   Upload the content of `data/team_data.csv` to a Google Sheet.
     *   Publish the Google Sheet to the web as CSV (File -> Share -> Publish to web -> Select the sheet -> Comma-separated values (.csv)).
     *   Copy the generated URL.
-    *   Open `script.js` and replace `const DATA_URL = './team_data.csv';` with your Google Sheet CSV URL.
+    *   Open `script.js` and replace `const DATA_URL = './data/team_data.csv';` with your Google Sheet CSV URL.
     *   `const DATA_URL = 'YOUR_GOOGLE_SHEET_CSV_URL';`
 
 3.  **GitHub Pages**:
@@ -30,5 +30,5 @@ This is a static website for the basketball team "胖胖星球HAPPY".
 *   `script.js`: Logic for the team detail page.
 *   `league.js`: Logic for the league overview page.
 *   `parser/`: Folder containing the data scraping tools (`parse_team.py` and `page.html`).
-*   `*.csv`: Data files for teams, schedules, and player stats.
+*   `data/*.csv`: Data files for teams, schedules, and player stats.
 *   `images/`: Local folder for team and player images.

@@ -99,7 +99,7 @@ def parse_team_data(html_file):
             time.sleep(0.1)
 
     # Output to CSV
-    with open('team_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('data/team_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['姓名', '號碼', '照片']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -143,7 +143,7 @@ def parse_team_data(html_file):
                 })
 
     # Output Schedule to CSV
-    with open('schedule_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('data/schedule_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['日期', '對手', '結果', '比分', '賽事編號']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -269,7 +269,7 @@ def parse_team_data(html_file):
             print(f"Failed to parse game {game_id}: {e}")
 
     # Output Team Info to CSV (replacing team_metadata.json)
-    with open('team_info.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('data/team_info.csv', 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['球隊名稱', '隊徽', '封面', '場均得分', '場均籃板', '場均助攻', '場均失分']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -285,7 +285,7 @@ def parse_team_data(html_file):
 
     # Output Games Data to CSVs (replacing games_data.json)
     # 1. Quarter Scores
-    with open('games_quarter_scores.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('data/games_quarter_scores.csv', 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['賽事編號', '球隊', '第一節', '第二節', '第三節', '第四節']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -300,7 +300,7 @@ def parse_team_data(html_file):
                 writer.writerow(row)
 
     # 2. Box Scores
-    with open('games_box_scores.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('data/games_box_scores.csv', 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['賽事編號', '球員', '得分', '兩分球進', '兩分球投', '兩分球%', '三分球進', '三分球投', '三分球%', 
                       '罰球進', '罰球投', '罰球%', '進攻籃板', '防守籃板', '籃板', '助攻', '抄截', '阻攻', '犯規', '失誤']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -422,7 +422,7 @@ def parse_team_data(html_file):
             print(f"Failed to parse player {player['Name']}: {e}")
 
     # Output Player Stats to CSV
-    with open('player_stats.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('data/player_stats.csv', 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['球員編號', '球員姓名', '日期', '對手', '得分', '兩分球進', '兩分球投', '兩分球%', 
                       '三分球進', '三分球投', '三分球%', '罰球進', '罰球投', '罰球%', 
                       '進攻籃板', '防守籃板', '籃板', '助攻', '抄截', '阻攻', '犯規', '失誤']

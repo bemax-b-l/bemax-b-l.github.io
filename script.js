@@ -1,9 +1,9 @@
-const TEAM_INFO_URL = './team_info.csv';
-const DATA_URL = './team_data.csv'; // Replace with Google Sheet CSV URL later
-const SCHEDULE_URL = './schedule_data.csv';
-const GAMES_QUARTER_URL = './games_quarter_scores.csv';
-const GAMES_BOX_URL = './games_box_scores.csv';
-const PLAYER_STATS_URL = './player_stats.csv';
+const TEAM_INFO_URL = './data/team_info.csv';
+const DATA_URL = './data/team_data.csv'; // Replace with Google Sheet CSV URL later
+const SCHEDULE_URL = './data/schedule_data.csv';
+const GAMES_QUARTER_URL = './data/games_quarter_scores.csv';
+const GAMES_BOX_URL = './data/games_box_scores.csv';
+const PLAYER_STATS_URL = './data/player_stats.csv';
 
 let gamesDetails = {};
 let playerStats = {};
