@@ -98,17 +98,57 @@ def parse_team_data(html_file):
             # Be nice to the server
             time.sleep(0.1)
 
-    # Output to CSV
-    with open('data/team_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['姓名', '號碼', '照片']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    # Output to Normalized CSVs
+    
+    # 1. teams.csv
+    teams_fieldnames = ['球隊ID', '球隊名稱', '隊徽', '封面', '場均得分', '場均籃板', '場均助攻', '場均失分']
+    team_id = 'happy'
+    team_row = {
+        '球隊ID': team_id,
+        '球隊名稱': team_name,
+        '隊徽': team_logo,
+        '封面': team_cover,
+        '場均得分': stats.get('PPG', ''),
+        '場均籃板': stats.get('RPG', ''),
+        '場均助攻': stats.get('APG', ''),
+        '場均失分': stats.get('OPPG', '')
+    }
+    with open('data/teams.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=teams_fieldnames)
         writer.writeheader()
-        for player in players:
-            writer.writerow({
-                '姓名': player['Name'],
-                '號碼': player['Number'],
-                '照片': player['Photo']
-            })
+        writer.writerow(team_row)
+
+    # 2. players.csv and team_roster.csv
+    players_fieldnames = ['球員ID', '球員姓名', '照片']
+    roster_fieldnames = ['球隊ID', '球員ID', '號碼']
+    
+    player_rows_data = []
+    roster_rows = []
+    
+    for i, p in enumerate(players):
+        p_id_match = re.search(r'id=(\d+)', p['Link'])
+        p_id = p_id_match.group(1) if p_id_match else f"p_{i}"
+        
+        player_rows_data.append({
+            '球員ID': p_id,
+            '球員姓名': p['Name'],
+            '照片': p['Photo']
+        })
+        roster_rows.append({
+            '球隊ID': team_id,
+            '球員ID': p_id,
+            '號碼': p['Number']
+        })
+
+    with open('data/players.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=players_fieldnames)
+        writer.writeheader()
+        writer.writerows(player_rows_data)
+
+    with open('data/team_roster.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=roster_fieldnames)
+        writer.writeheader()
+        writer.writerows(roster_rows)
 
 
 
@@ -142,24 +182,32 @@ def parse_team_data(html_file):
                     'Link': link
                 })
 
-    # Output Schedule to CSV
-    with open('data/schedule_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['日期', '對手', '結果', '比分', '賽事編號']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for game in schedule:
-            # Extract GameID from Link
-            game_id = ''
-            if game['Link']:
-                game_id_match = re.search(r'id=(\d+)', game['Link'])
-                game_id = game_id_match.group(1) if game_id_match else ''
-            writer.writerow({
-                '日期': game['Date'],
-                '對手': game['Opponent'],
-                '結果': game['Result'],
-                '比分': game['Score'],
-                '賽事編號': game_id
-            })
+    # 3. games.csv and game_team_stats.csv
+    games_fieldnames = ['賽事編號', '季度ID', '日期', '主隊ID', '客隊ID', '主隊得分', '客隊得分']
+    ts_fieldnames = ['賽事編號', '球隊ID', '第一節', '第二節', '第三節', '第四節', '總分']
+    
+    game_rows = []
+    ts_rows = []
+    
+    season_id = '2025-q1'
+    
+    for game in schedule:
+        g_id_match = re.search(r'id=(\d+)', game['Link'])
+        g_id = g_id_match.group(1) if g_id_match else "unknown"
+        
+        score_parts = game['Score'].split('-')
+        h_score = score_parts[0].strip() if len(score_parts) > 1 else ""
+        a_score = score_parts[1].strip() if len(score_parts) > 1 else ""
+        
+        game_rows.append({
+            '賽事編號': g_id,
+            '季度ID': season_id,
+            '日期': game['Date'],
+            '主隊ID': team_id,
+            '客隊ID': game['Opponent'],
+            '主隊得分': h_score,
+            '客隊得分': a_score
+        })
 
     # Scrape Game Details
     games_details = {}
@@ -200,9 +248,9 @@ def parse_team_data(html_file):
             stats_table_match = re.search(r'<table class="statistics-data-item.*?id="home-team-tab".*?>(.*?)</table>', game_html, re.DOTALL)
             if stats_table_match:
                 # Rows are either 'statistics-data-odd' or 'statistics-data-double'
-                player_rows = re.findall(r'<tr class="statistics-data-(?:odd|double)">(.*?)</tr>', stats_table_match.group(1), re.DOTALL)
+                p_rows_html = re.findall(r'<tr class="statistics-data-(?:odd|double)">(.*?)</tr>', stats_table_match.group(1), re.DOTALL)
                 
-                for row in player_rows:
+                for row in p_rows_html:
                     # Extract player name and number
                     name_match = re.search(r'<td class="player-name">.*?>(.*?)</a>', row, re.DOTALL)
                     if not name_match: continue
@@ -263,198 +311,75 @@ def parse_team_data(html_file):
                 'box_score': box_score
             }
             
+            # Populate ts_rows (Game Team Stats)
+            for qs in quarter_scores:
+                ts_rows.append({
+                    '賽事編號': game_id,
+                    '球隊ID': team_id if qs['team'] == team_name else qs['team'],
+                    '第一節': qs['scores'][0] if len(qs['scores']) > 0 else '',
+                    '第二節': qs['scores'][1] if len(qs['scores']) > 1 else '',
+                    '第三節': qs['scores'][2] if len(qs['scores']) > 2 else '',
+                    '第四節': qs['scores'][3] if len(qs['scores']) > 3 else '',
+                    '總分': sum(int(s) for s in qs['scores'] if s.isdigit())
+                })
+            
             time.sleep(0.5) # Be nice
             
         except Exception as e:
             print(f"Failed to parse game {game_id}: {e}")
 
-    # Output Team Info to CSV (replacing team_metadata.json)
-    with open('data/team_info.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['球隊名稱', '隊徽', '封面', '場均得分', '場均籃板', '場均助攻', '場均失分']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    with open('data/games.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=games_fieldnames)
         writer.writeheader()
-        writer.writerow({
-            '球隊名稱': team_name,
-            '隊徽': team_logo,
-            '封面': team_cover,
-            '場均得分': stats.get('PPG', ''),
-            '場均籃板': stats.get('RPG', ''),
-            '場均助攻': stats.get('APG', ''),
-            '場均失分': stats.get('OPPG', '')
-        })
+        writer.writerows(game_rows)
 
-    # Output Games Data to CSVs (replacing games_data.json)
-    # 1. Quarter Scores
-    with open('data/games_quarter_scores.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['賽事編號', '球隊', '第一節', '第二節', '第三節', '第四節']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    with open('data/game_team_stats.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=ts_fieldnames)
         writer.writeheader()
-        
-        for game_id, details in games_details.items():
-            for q in details['quarter_scores']:
-                row = {'賽事編號': game_id, '球隊': q['team']}
-                quarters = ['第一節', '第二節', '第三節', '第四節']
-                for i, score in enumerate(q['scores']):
-                    if i < 4:
-                        row[quarters[i]] = score
-                writer.writerow(row)
+        writer.writerows(ts_rows)
 
-    # 2. Box Scores
-    with open('data/games_box_scores.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['賽事編號', '球員', '得分', '兩分球進', '兩分球投', '兩分球%', '三分球進', '三分球投', '三分球%', 
-                      '罰球進', '罰球投', '罰球%', '進攻籃板', '防守籃板', '籃板', '助攻', '抄截', '阻攻', '犯規', '失誤']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    # 4. game_player_stats.csv
+    ps_fieldnames = ['賽事編號', '球員ID', '球隊ID', '得分', '兩分球進', '兩分球投', '三分球進', '三分球投', '罰球進', '罰球投', '進攻籃板', '防守籃板', '籃板', '助攻', '抄截', '阻攻', '犯規', '失誤']
+    ps_rows = []
+    
+    player_name_to_id = {p['球員姓名']: p['球員ID'] for p in player_rows_data}
+    
+    for g_id, details in games_details.items():
+        for p in details['box_score']:
+            p_name = p['player'].split(' #')[0]
+            p_id = player_name_to_id.get(p_name, p_name)
+            
+            ps_rows.append({
+                '賽事編號': g_id,
+                '球員ID': p_id,
+                '球隊ID': team_id,
+                '得分': p['points'],
+                '兩分球進': p.get('fg2_made', ''),
+                '兩分球投': p.get('fg2_attempt', ''),
+                '三分球進': p.get('fg3_made', ''),
+                '三分球投': p.get('fg3_attempt', ''),
+                '罰球進': p.get('ft_made', ''),
+                '罰球投': p.get('ft_attempt', ''),
+                '進攻籃板': p.get('reb_off', ''),
+                '防守籃板': p.get('reb_def', ''),
+                '籃板': p['reb'],
+                '助攻': p['ast'],
+                '抄截': p['stl'],
+                '阻攻': p['blk'],
+                '犯規': p['foul'],
+                '失誤': p['to']
+            })
+
+    with open('data/game_player_stats.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=ps_fieldnames)
         writer.writeheader()
-        
-        for game_id, details in games_details.items():
-            for p in details['box_score']:
-                writer.writerow({
-                    '賽事編號': game_id,
-                    '球員': p['player'],
-                    '得分': p['points'],
-                    '兩分球進': p.get('fg2_made', ''),
-                    '兩分球投': p.get('fg2_attempt', ''),
-                    '兩分球%': p.get('fg2_pct', ''),
-                    '三分球進': p.get('fg3_made', ''),
-                    '三分球投': p.get('fg3_attempt', ''),
-                    '三分球%': p.get('fg3_pct', ''),
-                    '罰球進': p.get('ft_made', ''),
-                    '罰球投': p.get('ft_attempt', ''),
-                    '罰球%': p.get('ft_pct', ''),
-                    '進攻籃板': p.get('reb_off', ''),
-                    '防守籃板': p.get('reb_def', ''),
-                    '籃板': p['reb'],
-                    '助攻': p['ast'],
-                    '抄截': p['stl'],
-                    '阻攻': p['blk'],
-                    '犯規': p['foul'],
-                    '失誤': p['to']
-                })
+        writer.writerows(ps_rows)
 
     print(f"Parsed {len(players)} players.")
     print(f"Parsed {len(schedule)} games.")
     print(f"Parsed details for {len(games_details)} games.")
     print(f"Team Name: {team_name}")
-    print("Images downloaded to static_site/images/")
-    print("Data saved to CSV files in static_site/")
-
-    # Scrape Player Stats
-    print("Scraping player stats (this may take a while)...")
-    player_stats = []
-    
-    for player in players:
-        link = player.get('Link')
-        if not link:
-            continue
-        
-        # Extract player ID from link
-        player_id_match = re.search(r'id=(\d+)', link)
-        player_id = player_id_match.group(1) if player_id_match else "unknown"
-        
-        print(f"Processing player {player['Name']} ({player_id})...")
-        
-        try:
-            req = urllib.request.Request(link, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response:
-                player_html = response.read().decode('utf-8')
-            
-            # Parse Player Record Table
-            # Look for table with class "statistics-data-item"
-            stats_table_match = re.search(r'<table class="statistics-data-item.*?>(.*?)</table>', player_html, re.DOTALL)
-            if stats_table_match:
-                rows = re.findall(r'<tr class="statistics-data-(?:odd|double)">(.*?)</tr>', stats_table_match.group(1), re.DOTALL)
-                
-                for row in rows:
-                    cols = re.findall(r'<td.*?>(.*?)</td>', row, re.DOTALL)
-                    # Clean cols
-                    clean_cols = []
-                    for col in cols:
-                        clean_cols.append(re.sub(r'<.*?>', '', col).strip())
-                    
-                    # Expected columns based on HTML analysis:
-                    # 0: Date/Time (e.g. 2019/05/28 20:50)
-                    # 1: Opponent (Team Name)
-                    # 2: Personal Score
-                    # 3: Record Type
-                    # 4-6: 2P
-                    # 7-9: 3P
-                    # 10-12: FT
-                    # 13-15: Reb (Off, Def, Total)
-                    # 16: Ast
-                    # 17: Stl
-                    # 18: Blk
-                    # 19: Foul
-                    # 20: TO
-                    
-                    if len(clean_cols) >= 21:
-                        # Extract date part only
-                        date = clean_cols[0].split()[0]
-                        opponent = clean_cols[1].replace('快樂聯盟冠軍賽', '').replace('快樂聯盟季後賽', '').replace('快樂聯盟例行賽', '').strip()
-                        
-                        player_stats.append({
-                            'PlayerID': player_id,
-                            'PlayerName': player['Name'],
-                            'Date': date,
-                            'Opponent': opponent,
-                            'PTS': clean_cols[2],
-                            'FG2M': clean_cols[4],
-                            'FG2A': clean_cols[5],
-                            'FG2PCT': clean_cols[6],
-                            'FG3M': clean_cols[7],
-                            'FG3A': clean_cols[8],
-                            'FG3PCT': clean_cols[9],
-                            'FTM': clean_cols[10],
-                            'FTA': clean_cols[11],
-                            'FTPCT': clean_cols[12],
-                            'OREB': clean_cols[13],
-                            'DREB': clean_cols[14],
-                            'REB': clean_cols[15],
-                            'AST': clean_cols[16],
-                            'STL': clean_cols[17],
-                            'BLK': clean_cols[18],
-                            'PF': clean_cols[19],
-                            'TO': clean_cols[20]
-                        })
-            
-            time.sleep(0.5)
-            
-        except Exception as e:
-            print(f"Failed to parse player {player['Name']}: {e}")
-
-    # Output Player Stats to CSV
-    with open('data/player_stats.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['球員編號', '球員姓名', '日期', '對手', '得分', '兩分球進', '兩分球投', '兩分球%', 
-                      '三分球進', '三分球投', '三分球%', '罰球進', '罰球投', '罰球%', 
-                      '進攻籃板', '防守籃板', '籃板', '助攻', '抄截', '阻攻', '犯規', '失誤']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for stat in player_stats:
-            writer.writerow({
-                '球員編號': stat['PlayerID'],
-                '球員姓名': stat['PlayerName'],
-                '日期': stat['Date'],
-                '對手': stat['Opponent'],
-                '得分': stat['PTS'],
-                '兩分球進': stat.get('FG2M', ''),
-                '兩分球投': stat.get('FG2A', ''),
-                '兩分球%': stat.get('FG2PCT', ''),
-                '三分球進': stat.get('FG3M', ''),
-                '三分球投': stat.get('FG3A', ''),
-                '三分球%': stat.get('FG3PCT', ''),
-                '罰球進': stat.get('FTM', ''),
-                '罰球投': stat.get('FTA', ''),
-                '罰球%': stat.get('FTPCT', ''),
-                '進攻籃板': stat.get('OREB', ''),
-                '防守籃板': stat.get('DREB', ''),
-                '籃板': stat['REB'],
-                '助攻': stat['AST'],
-                '抄截': stat['STL'],
-                '阻攻': stat['BLK'],
-                '犯規': stat['PF'],
-                '失誤': stat['TO']
-            })
-            
-    print(f"Parsed stats for {len(player_stats)} games across all players.")
+    print("Data saved to normalized CSV files in data/")
 
 
 if __name__ == "__main__":
