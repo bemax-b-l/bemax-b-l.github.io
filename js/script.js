@@ -19,22 +19,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderSchedule();
         setupPlayerModal();
         setupGameModal();
+        updateBackLink();
     } catch (error) {
         console.error('Error loading data:', error);
     }
 });
 
+function updateBackLink() {
+    const backLink = document.querySelector('.back-link');
+    if (backLink && currentSeason) {
+        backLink.href = `index.html?season=${currentSeason.id}`;
+    }
+}
+
 async function loadAllData() {
     const urlParams = new URLSearchParams(window.location.search);
-    const seasonId = urlParams.get('season') || '2025-q1';
+    const seasonId = urlParams.get('season');
+    const teamId = urlParams.get('team') || 'happy';
 
     const sRes = await fetch(SEASONS_CONFIG_URL);
     const sJson = await sRes.json();
+
+    // Default to first season if not specified or not found
     currentSeason = sJson.find(s => s.id === seasonId) || sJson[0];
 
     if (!currentSeason) throw new Error('Season not found');
 
     const paths = currentSeason.paths;
+
+    // Set dynamic team ID
+    const targetTeamId = teamId;
 
     const [tRes, pRes, rRes, gRes, tsRes, psRes] = await Promise.all([
         fetch(paths.teams),
@@ -51,10 +65,10 @@ async function loadAllData() {
 
     const parsedTeams = parseCSV(tText);
     allTeams = parsedTeams;
-    teamInfo = parsedTeams.find(t => t['球隊ID'] === MAIN_TEAM_ID) || {};
+    teamInfo = parsedTeams.find(t => t['球隊ID'] === targetTeamId) || parsedTeams[0] || {};
     players = parseCSV(pText);
-    roster = parseCSV(rText).filter(r => r['球隊ID'] === MAIN_TEAM_ID);
-    games = parseCSV(gText).filter(g => g['主隊ID'] === MAIN_TEAM_ID || g['客隊ID'] === MAIN_TEAM_ID);
+    roster = parseCSV(rText).filter(r => r['球隊ID'] === targetTeamId);
+    games = parseCSV(gText).filter(g => g['主隊ID'] === targetTeamId || g['客隊ID'] === targetTeamId);
 
     const tsData = parseCSV(tsText);
     tsData.forEach(row => {
@@ -70,8 +84,11 @@ async function loadAllData() {
 }
 
 function parseCSV(text) {
-    const lines = text.split('\n').filter(line => line.trim() !== '');
+    // Remove BOM if present
+    const cleanText = text.replace(/^\ufeff/, '');
+    const lines = cleanText.split(/\r?\n/).filter(line => line.trim() !== '');
     if (lines.length === 0) return [];
+
     const headers = lines[0].split(',').map(h => h.trim());
     return lines.slice(1).map(line => {
         const currentLine = line.split(',');
@@ -150,10 +167,11 @@ function renderSchedule() {
     games.forEach(game => {
         const row = document.createElement('tr');
 
-        // Determine result from main team's perspective
+        // Determine result from current team's perspective
         let result = '-';
         let resultClass = '';
-        const isHome = game['主隊ID'] === MAIN_TEAM_ID;
+        const currentTeamId = teamInfo['球隊ID'];
+        const isHome = game['主隊ID'] === currentTeamId;
         const homeScore = parseInt(game['主隊得分']);
         const awayScore = parseInt(game['客隊得分']);
 
@@ -194,7 +212,8 @@ function openPlayerModal(playerId) {
         if (s) {
             const game = games.find(g => g['賽事編號'] === gameId);
             if (game) {
-                const isHome = game['主隊ID'] === MAIN_TEAM_ID;
+                const currentTeamId = teamInfo['球隊ID'];
+                const isHome = game['主隊ID'] === currentTeamId;
                 const opponentId = isHome ? game['客隊ID'] : game['主隊ID'];
                 const opponent = allTeams.find(t => t['球隊ID'] === opponentId) || { '球隊名稱': opponentId };
                 stats.push({ ...s, date: game['日期'], opponent: opponent['球隊名稱'] });

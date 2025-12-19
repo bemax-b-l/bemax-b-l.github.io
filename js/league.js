@@ -20,14 +20,17 @@ async function loadData() {
 }
 
 function parseCSV(text) {
-    const lines = text.split('\n').filter(line => line.trim() !== '');
+    // Remove BOM if present
+    const cleanText = text.replace(/^\ufeff/, '');
+    const lines = cleanText.split(/\r?\n/).filter(line => line.trim() !== '');
     if (lines.length === 0) return [];
-    const headers = lines[0].split(',');
+
+    const headers = lines[0].split(',').map(h => h.trim());
     return lines.slice(1).map(line => {
         const values = line.split(',');
         const obj = {};
         headers.forEach((header, i) => {
-            obj[header.trim()] = values[i] ? values[i].trim() : '';
+            obj[header] = values[i] ? values[i].trim() : '';
         });
         return obj;
     });
@@ -44,7 +47,25 @@ function setupSeasonSelector() {
         selector.appendChild(option);
     });
 
+    // Handle default season from URL or first season
+    const urlParams = new URLSearchParams(window.location.search);
+    let seasonId = urlParams.get('season');
+
+    if (!seasonId && seasons.length > 0) {
+        seasonId = seasons[0].id;
+        // Update URL without reload
+        const newUrl = `${window.location.pathname}?season=${seasonId}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+
+    if (seasonId) {
+        selector.value = seasonId;
+    }
+
     selector.addEventListener('change', () => {
+        const newSeasonId = selector.value;
+        const newUrl = `${window.location.pathname}?season=${newSeasonId}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
         renderTeams();
     });
 }
@@ -91,7 +112,7 @@ async function renderTeams() {
                 </div>
                 <div class="league-grid">
                     ${groups[groupName].map(team => {
-                const detailUrl = team['球隊ID'] === 'happy' ? `team.html?season=${selectedSeasonId}` : '#';
+                const detailUrl = `team.html?season=${selectedSeasonId}&team=${team['球隊ID']}`;
                 return `
                             <div class="league-team-card">
                                 <div class="team-logo-wrapper">
