@@ -11,25 +11,50 @@ This is a static website for the basketball team "胖胖星球HAPPY".
         ```
         Then visit `http://localhost:8000`.
 
-2.  **Google Sheets Integration**:
-    *   Upload the content of `data/team_data.csv` to a Google Sheet.
-    *   Publish the Google Sheet to the web as CSV (File -> Share -> Publish to web -> Select the sheet -> Comma-separated values (.csv)).
-    *   Copy the generated URL.
-    *   Open `script.js` and replace `const DATA_URL = './data/team_data.csv';` with your Google Sheet CSV URL.
-    *   `const DATA_URL = 'YOUR_GOOGLE_SHEET_CSV_URL';`
+## Data Integration
 
-3.  **GitHub Pages**:
-    *   Upload the contents of this folder to a GitHub repository.
-    *   Enable GitHub Pages in the repository settings.
+The website is integrated with Google Sheets as its primary data source. Each season's data is managed in a separate Google Spreadsheet, published as CSV.
 
-## Files
+### Configuration
 
-*   `data/seasons.csv`: List of seasons.
-*   `data/teams.csv`: Team information and averages.
-*   `data/players.csv`: Player information.
-*   `data/season_teams.csv`: Mapping of teams to seasons with records.
-*   `data/team_roster.csv`: Mapping of players to teams with jersey numbers.
-*   `data/games.csv`: Schedule and game results.
-*   `data/game_team_stats.csv`: Quarter scores for games.
-*   `data/game_player_stats.csv`: Individual player box scores for games.
-*   `images/`: Local folder for team and player images.
+The data source URLs are configured in `data/seasons.config`. This JSON file defines each season's ID, display name, image root path, and the specific CSV URLs for all data tables.
+
+### Data Tables (Sheets)
+
+Each season requires the following tables (sheets) to be published as CSV:
+
+#### 1. Teams (`teams`)
+Contains information about the teams in the league.
+- **Columns**: `球隊ID`, `組別`, `球隊名稱`, `隊徽`, `封面`, `場均得分`, `場均籃板`, `場均助攻`, `場均失分`, `勝`, `敗`
+
+#### 2. Players (`players`)
+Master list of all players in the league.
+- **Columns**: `球員ID`, `球員姓名`, `照片`
+
+#### 3. Roster (`roster`)
+Maps players to specific teams for the season.
+- **Columns**: `球隊ID`, `球員ID`, `號碼`
+
+#### 4. Games (`games`)
+Schedule and final scores for all games.
+- **Columns**: `賽事編號`, `日期`, `主隊ID`, `客隊ID`, `主隊得分`, `客隊得分`
+
+#### 5. Team Stats (`team_stats`)
+Detailed quarter-by-quarter scores for each team in a game.
+- **Columns**: `賽事編號`, `球隊ID`, `第一節`, `第二節`, `第三節`, `第四節`, `總分`
+
+#### 6. Player Stats (`player_stats`)
+Individual player box scores for each game.
+- **Columns**: `賽事編號`, `球隊ID`, `球員ID`, `得分`, `兩分球投`, `兩分球進`, `三分球投`, `三分球進`, `罰球投`, `罰球進`, `進攻籃板`, `防守籃板`, `籃板`, `助攻`, `抄截`, `阻攻`, `犯規`, `失誤`
+
+## Local Development
+
+1.  **Run a local server**:
+    ```bash
+    python3 -m http.server 8000
+    ```
+2.  **Visit**: `http://localhost:8000`
+
+## Deployment
+
+The site is designed to be hosted on GitHub Pages. Simply push the code to a repository and enable Pages in the settings.

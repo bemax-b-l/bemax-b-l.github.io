@@ -1,12 +1,8 @@
-const TEAMS_URL = './data/teams.csv';
-const PLAYERS_URL = './data/players.csv';
-const ROSTER_URL = './data/team_roster.csv';
-const GAMES_URL = './data/games.csv';
-const GAME_TEAM_STATS_URL = './data/game_team_stats.csv';
-const GAME_PLAYER_STATS_URL = './data/game_player_stats.csv';
+const SEASONS_CONFIG_URL = './data/seasons.config';
 
 const MAIN_TEAM_ID = 'happy';
 
+let currentSeason = null;
 let teamInfo = {};
 let allTeams = [];
 let players = [];
@@ -29,13 +25,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAllData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const seasonId = urlParams.get('season') || '2025-q1';
+
+    const sRes = await fetch(SEASONS_CONFIG_URL);
+    const sJson = await sRes.json();
+    currentSeason = sJson.find(s => s.id === seasonId) || sJson[0];
+
+    if (!currentSeason) throw new Error('Season not found');
+
+    const paths = currentSeason.paths;
+
     const [tRes, pRes, rRes, gRes, tsRes, psRes] = await Promise.all([
-        fetch(TEAMS_URL),
-        fetch(PLAYERS_URL),
-        fetch(ROSTER_URL),
-        fetch(GAMES_URL),
-        fetch(GAME_TEAM_STATS_URL),
-        fetch(GAME_PLAYER_STATS_URL)
+        fetch(paths.teams),
+        fetch(paths.players),
+        fetch(paths.roster),
+        fetch(paths.games),
+        fetch(paths.team_stats),
+        fetch(paths.player_stats)
     ]);
 
     const [tText, pText, rText, gText, tsText, psText] = await Promise.all([
@@ -80,8 +87,9 @@ function renderTeamInfo() {
     if (!teamInfo['球隊名稱']) return;
     document.title = `${teamInfo['球隊名稱']} - Team Profile`;
     document.getElementById('team-name').textContent = teamInfo['球隊名稱'];
-    document.getElementById('team-logo').src = teamInfo['隊徽'];
-    document.getElementById('hero-bg').style.backgroundImage = `url('${teamInfo['封面']}')`;
+    const imageRoot = currentSeason ? currentSeason.images : '';
+    document.getElementById('team-logo').src = `${imageRoot}${teamInfo['隊徽']}`;
+    document.getElementById('hero-bg').style.backgroundImage = `url('${imageRoot}${teamInfo['封面']}')`;
 
     const statsContainer = document.getElementById('team-stats');
     statsContainer.innerHTML = '';
@@ -118,7 +126,8 @@ function renderRoster() {
         card.onclick = () => openPlayerModal(player['球員ID']);
         card.style.cursor = 'pointer';
 
-        const photoUrl = player['照片'] && player['照片'].trim() !== '' ? player['照片'] : 'https://via.placeholder.com/400x400?text=No+Image';
+        const imageRoot = currentSeason ? currentSeason.images : '';
+        const photoUrl = player['照片'] && player['照片'].trim() !== '' ? `${imageRoot}${player['照片']}` : 'https://via.placeholder.com/400x400?text=No+Image';
 
         card.innerHTML = `
             <div class="player-bg-number">${r['號碼']}</div>
@@ -200,7 +209,8 @@ function openPlayerModal(playerId) {
 
     const modal = document.getElementById('player-modal');
     document.getElementById('player-modal-name').textContent = player['球員姓名'];
-    const photoUrl = player['照片'] && player['照片'].trim() !== '' ? player['照片'] : 'https://via.placeholder.com/400x400?text=No+Image';
+    const imageRoot = currentSeason ? currentSeason.images : '';
+    const photoUrl = player['照片'] && player['照片'].trim() !== '' ? `${imageRoot}${player['照片']}` : 'https://via.placeholder.com/400x400?text=No+Image';
     document.getElementById('player-modal-photo').src = photoUrl;
 
     let totalPts = 0, totalReb = 0, totalAst = 0;

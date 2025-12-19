@@ -726,3 +726,75 @@ footer {
         width: 100%;
     }
 }
+
+/* Responsive Horizontal Team Layout Styles */
+.groups-horizontal-container {
+    display: flex;
+    flex-direction: column;
+    /* Stack groups vertically */
+    gap: 4rem;
+    margin-top: 2rem;
+}
+
+.group-column {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 2.5rem;
+    border-radius: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.fancy-group-header {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.header-accent {
+    width: 10px;
+    height: 36px;
+    background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+    border-radius: 5px;
+}
+
+.fancy-group-header h2 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
+    font-family: var(--font-zh);
+}
+
+.group-column .league-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    /* Teams wrap horizontally */
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .group-column {
+        padding: 1.5rem;
+    }
+
+    .fancy-group-header h2 {
+        font-size: 1.8rem;
+    }
+
+    .group-column .league-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.loading,
+.error {
+    text-align: center;
+    font-size: 1.5rem;
+    padding: 3rem;
+    color: var(--text-muted);
+}
