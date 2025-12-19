@@ -12,6 +12,14 @@ let gameTeamStats = {};
 let gamePlayerStats = {};
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Try to show logo immediately if passed in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const logoUrl = urlParams.get('logo');
+    if (logoUrl) {
+        const logoImg = document.getElementById('team-logo');
+        if (logoImg) logoImg.src = decodeURIComponent(logoUrl);
+    }
+
     try {
         await loadAllData();
         renderTeamInfo();

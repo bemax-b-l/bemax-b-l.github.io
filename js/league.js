@@ -112,7 +112,8 @@ async function renderTeams() {
                 </div>
                 <div class="league-grid">
                     ${groups[groupName].map(team => {
-                const detailUrl = `team.html?season=${selectedSeasonId}&team=${team['球隊ID']}`;
+                const logoUrl = `${imageRoot}${team['隊徽']}`;
+                const detailUrl = `team.html?season=${selectedSeasonId}&team=${team['球隊ID']}&logo=${encodeURIComponent(logoUrl)}`;
                 return `
                             <div class="league-team-card">
                                 <div class="team-logo-wrapper">
