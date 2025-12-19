@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>胖胖星球HAPPY - 聯盟概覽</title>
+    <link rel="stylesheet" href="style.css?v=20251218">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Outfit:wght@400;700;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <header class="hero-section">
+        <div class="hero-overlay"></div>
+        <div class="container hero-content">
+            <h1 class="team-title">聯盟概覽</h1>
+            <p class="team-subtitle">選擇賽季查看隊伍戰績</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="league-section">
+            <div class="league-controls">
+                <div class="season-selector-wrapper">
+                    <label for="season-select">選擇賽季：</label>
+                    <select id="season-select" class="season-select">
+                        <!-- Seasons injected by JS -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="league-grid" id="league-grid">
+                <!-- Teams injected by JS -->
+            </div>
+        </section>
+    </main>
+
+    <footer class="container">
+        <p>&copy; 2025 胖胖星球HAPPY. All rights reserved.</p>
+    </footer>
+
+    <script src="league.js?v=20251218"></script>
+</body>
+
+</html>

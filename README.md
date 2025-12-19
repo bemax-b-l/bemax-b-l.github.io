@@ -24,8 +24,11 @@ This is a static website for the basketball team "胖胖星球HAPPY".
 
 ## Files
 
-*   `index.html`: Main entry point.
-*   `style.css`: Stylesheet.
-*   `script.js`: Logic to fetch and display data.
-*   `team_data.csv`: Parsed roster data.
-*   `team_metadata.json`: Team info and stats.
+*   `index.html`: League Overview (Landing Page).
+*   `team.html`: Detailed Team Profile page.
+*   `style.css`: Main stylesheet.
+*   `script.js`: Logic for the team detail page.
+*   `league.js`: Logic for the league overview page.
+*   `parser/`: Folder containing the data scraping tools (`parse_team.py` and `page.html`).
+*   `*.csv`: Data files for teams, schedules, and player stats.
+*   `images/`: Local folder for team and player images.

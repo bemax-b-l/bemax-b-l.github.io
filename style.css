@@ -31,8 +31,8 @@ body {
 /* Hero Section */
 .hero-section {
     position: relative;
-    height: 60vh;
-    min-height: 400px;
+    min-height: 60vh;
+    padding: 4rem 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -66,6 +66,28 @@ body {
 .hero-content {
     z-index: 1;
     animation: fadeInUp 1s ease-out;
+    position: relative;
+}
+
+.back-link {
+    position: absolute;
+    top: -2rem;
+    left: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.back-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(-5px);
 }
 
 .team-logo-container {
@@ -286,11 +308,31 @@ footer {
 
 @media (max-width: 768px) {
     .team-name {
-        font-size: 2.5rem;
+        font-size: 2rem;
     }
 
     .hero-section {
-        height: 50vh;
+        min-height: 50vh;
+        padding: 3rem 0;
+    }
+
+    .team-stats {
+        gap: 1rem;
+    }
+
+    .stat-item {
+        padding: 0.75rem 1rem;
+        min-width: 120px;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .back-link {
+        top: 0.5rem;
+        left: 0.5rem;
+        font-size: 0.8rem;
     }
 }
 
@@ -560,5 +602,127 @@ footer {
 
     .player-averages {
         justify-content: center;
+    }
+}
+
+/* League Page Styles */
+.league-controls {
+    margin-bottom: 3rem;
+    display: flex;
+    justify-content: center;
+}
+
+.season-selector-wrapper {
+    background: var(--card-bg);
+    padding: 1rem 2rem;
+    border-radius: 3rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.season-selector-wrapper label {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.season-select {
+    background: #111827;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.season-select:focus {
+    border-color: var(--primary-color);
+}
+
+.league-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.league-team-card {
+    background: var(--card-bg);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.league-team-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--primary-color);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.team-logo-wrapper {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1.5rem;
+    background: white;
+    border-radius: 50%;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.league-team-logo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.league-team-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.team-record {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-family: 'Outfit', sans-serif;
+}
+
+.view-team-btn {
+    display: inline-block;
+    background: transparent;
+    border: 1px solid var(--secondary-color);
+    color: var(--secondary-color);
+    padding: 0.75rem 2rem;
+    border-radius: 2rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.view-team-btn:hover {
+    background: var(--secondary-color);
+    color: var(--bg-color);
+}
+
+@media (max-width: 600px) {
+    .season-selector-wrapper {
+        flex-direction: column;
+        border-radius: 1rem;
+        width: 100%;
     }
 }
