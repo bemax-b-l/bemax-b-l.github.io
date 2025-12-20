@@ -26,16 +26,24 @@
         </div>
     </header>
 
+    <div class="container" style="margin-top: 2rem;">
+        <div class="league-controls" style="margin-bottom: 0;">
+            <div class="season-selector-wrapper">
+                <label for="season-select">選擇賽季：</label>
+                <select id="season-select" class="season-select">
+                    <!-- Seasons injected by JS -->
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <section id="top-players-section" class="container top-players-section">
+        <!-- Top players injected by JS -->
+    </section>
+
     <main class="container">
         <section class="league-section">
-            <div class="league-controls">
-                <div class="season-selector-wrapper">
-                    <label for="season-select">選擇賽季：</label>
-                    <select id="season-select" class="season-select">
-                        <!-- Seasons injected by JS -->
-                    </select>
-                </div>
-            </div>
+
 
             <div id="league-grid">
                 <!-- Teams injected by JS -->

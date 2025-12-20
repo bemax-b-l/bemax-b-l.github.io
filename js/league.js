@@ -138,4 +138,112 @@ async function renderTeams() {
         console.error('Error loading teams for season:', error);
         gridContainer.innerHTML = '<div class="error">Error loading teams.</div>';
     }
+
+    // Load Top Players
+    await renderTopPlayers(selectedSeason);
+}
+
+async function renderTopPlayers(season) {
+    const container = document.getElementById('top-players-section');
+    if (!season.paths.top_players) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = '<div class="loading">Loading top players...</div>';
+
+    try {
+        const res = await fetch(season.paths.top_players);
+        const text = await res.text();
+        const data = parseCSV(text);
+
+        container.innerHTML = '';
+
+        if (data.length === 0) return;
+
+        // Group by '排名類型'
+        const categories = {};
+        data.forEach(item => {
+            const type = item['排名類型'];
+            if (!categories[type]) categories[type] = [];
+            categories[type].push(item);
+        });
+
+        // Sort categories order if needed, or just iterate
+        // Define explicit order and icons
+        const categoryConfig = {
+            '得分排行': { icon: '🏀', label: '得分王' },
+            '籃板排行': { icon: '🙌', label: '籃板王' },
+            '助攻排行': { icon: '🤝', label: '助攻王' },
+            '抄截排行': { icon: '⚡', label: '抄截王' },
+            '火鍋排行': { icon: '✋', label: '火鍋王' }
+        };
+
+        const grid = document.createElement('div');
+        grid.className = 'top-players-grid';
+
+        for (const [type, players] of Object.entries(categories)) {
+            const config = categoryConfig[type] || { icon: '🏆', label: type };
+
+            // Sort players by rank just in case
+            players.sort((a, b) => parseInt(a['排名']) - parseInt(b['排名']));
+
+            const card = document.createElement('div');
+            card.className = 'top-player-card';
+
+            let listHtml = '';
+            players.slice(0, 3).forEach(p => {
+                const rankClass = `rank-${p['排名']}`;
+                // Find team name from teams array if possible, or use CSV provided name
+                // The CSV has '球隊名稱'
+
+                // Value key depends on type? The CSV has '平均得分' for points, but maybe others for others?
+                // Looking at CSV sample: 
+                // 得分排行 -> 平均得分
+                // 籃板排行 -> (value is in last column?)
+                // Actually the sample shows '平均得分' as the last header, but the values for rebounds are there too.
+                // Let's assume the last column is the value, or we check specific keys.
+                // Sample headers: 排名類型,排名,球隊名稱,球隊ID,球員姓名,球員ID,平均得分
+                // Wait, the sample shows '平均得分' for all? Or does the header change?
+                // The sample provided:
+                // 排名類型,排名,球隊名稱,球隊ID,球員姓名,球員ID,平均得分
+                // ...
+                // 籃板排行,1,...,15.0
+                // So the last column seems to hold the value regardless of the header name '平均得分'.
+                // Let's get the last value from the object or specific key if it varies.
+                // Since parseCSV uses headers, and the header is '平均得分', we can use that key.
+                // But for safety, let's check if there's a generic value key or just use '平均得分'.
+
+                const value = p['平均得分'] || p['數值'] || Object.values(p).pop();
+
+                listHtml += `
+                    <div class="top-player-item">
+                        <div class="tp-rank ${rankClass}">${p['排名']}</div>
+                        <div class="tp-info">
+                            <div class="tp-name">${p['球員姓名']}</div>
+                            <div class="tp-team">${p['球隊名稱']}</div>
+                        </div>
+                        <div class="tp-value">${value}</div>
+                    </div>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="top-player-header">
+                    <div class="top-player-icon">${config.icon}</div>
+                    <div class="top-player-title">${config.label}</div>
+                </div>
+                <div class="top-player-list">
+                    ${listHtml}
+                </div>
+            `;
+            grid.appendChild(card);
+        }
+
+        container.appendChild(grid);
+
+    } catch (error) {
+        console.error('Error loading top players:', error);
+        container.innerHTML = ''; // Hide if error
+    }
 }
