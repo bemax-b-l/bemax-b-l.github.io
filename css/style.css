@@ -940,4 +940,17 @@ footer {
     font-weight: 700;
     color: var(--secondary-color);
     font-family: 'Outfit', sans-serif;
+}/* SPA View Styles */
+#league-view, #team-view {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Ensure modals are on top */
+.modal {
+    z-index: 2000;
 }

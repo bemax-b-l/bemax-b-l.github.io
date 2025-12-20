@@ -14,42 +14,219 @@
 </head>
 
 <body>
-    <header class="hero-section index-hero">
-        <div class="hero-bg" id="hero-bg"></div>
-        <div class="hero-overlay"></div>
-        <div class="container hero-content">
-            <div class="league-logo-container">
-                <img src="images/logo.png" alt="League Logo" class="league-logo">
+    <div id="league-view">
+        <header class="hero-section index-hero">
+            <div class="hero-bg" id="hero-bg"></div>
+            <div class="hero-overlay"></div>
+            <div class="container hero-content">
+                <div class="league-logo-container">
+                    <img src="images/logo.png" alt="League Logo" class="league-logo">
+                </div>
+                <h1 class="team-title">胖胖星球 BEMAX</h1>
+                <h1 class="team-subtitle">Basketball League</h1>
             </div>
-            <h1 class="team-title">胖胖星球 BEMAX</h1>
-            <h1 class="team-subtitle">Basketball League</h1>
+        </header>
+        <div class="container" style="margin-top: 2rem;">
+            <div class="league-controls" style="margin-bottom: 0;">
+                <div class="season-selector-wrapper">
+                    <label for="season-select">選擇賽季：</label>
+                    <select id="season-select" class="season-select">
+                        <!-- Seasons injected by JS -->
+                    </select>
+                </div>
+            </div>
         </div>
-    </header>
 
-    <div class="container" style="margin-top: 2rem;">
-        <div class="league-controls" style="margin-bottom: 0;">
-            <div class="season-selector-wrapper">
-                <label for="season-select">選擇賽季：</label>
-                <select id="season-select" class="season-select">
-                    <!-- Seasons injected by JS -->
-                </select>
+        <section id="top-players-section" class="container top-players-section">
+            <!-- Top players injected by JS -->
+        </section>
+
+        <main class="container">
+            <section class="league-section">
+                <div id="league-grid">
+                    <!-- Teams injected by JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="team-view" style="display: none;">
+        <header class="hero-section">
+            <div class="hero-bg" id="team-hero-bg"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <a href="#" class="back-link" onclick="showLeagueView(); return false;">← 返回聯盟概覽</a>
+                <div class="team-logo-container">
+                    <img id="team-logo" src="" alt="Team Logo" class="team-logo" style="display: none;">
+                </div>
+                <h1 id="team-name" class="team-name">Loading...</h1>
+                <div class="team-stats" id="team-stats">
+                    <!-- Stats injected by JS -->
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <section class="schedule-section">
+                <h2 class="section-title">近期賽程</h2>
+                <div class="schedule-container">
+                    <table class="schedule-table" id="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>對手</th>
+                                <th>結果</th>
+                                <th>比分</th>
+                                <th>詳情</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Schedule injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="roster-section">
+                <h2 class="section-title">球隊陣容</h2>
+                <div class="roster-grid" id="roster-grid">
+                    <!-- Players injected by JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Game Detail Modal -->
+    <div id="game-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modal-title">比賽詳情</h2>
+
+            <div class="modal-section">
+                <h3>每節比分</h3>
+                <table id="quarter-table" class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>球隊</th>
+                            <th>第一節</th>
+                            <th>第二節</th>
+                            <th>第三節</th>
+                            <th>第四節</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="modal-section">
+                <h3>球員數據</h3>
+                <div class="table-responsive">
+                    <table id="box-score-table" class="detail-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2">球員</th>
+                                <th rowspan="2">得分</th>
+                                <th colspan="3">2分球</th>
+                                <th colspan="3">3分球</th>
+                                <th colspan="3">罰球</th>
+                                <th colspan="3">籃板</th>
+                                <th rowspan="2">助攻</th>
+                                <th rowspan="2">抄截</th>
+                                <th rowspan="2">阻攻</th>
+                                <th rowspan="2">犯規</th>
+                                <th rowspan="2">失誤</th>
+                            </tr>
+                            <tr>
+                                <th>進球</th>
+                                <th>出手</th>
+                                <th>命中率</th>
+                                <th>進球</th>
+                                <th>出手</th>
+                                <th>命中率</th>
+                                <th>進球</th>
+                                <th>出手</th>
+                                <th>命中率</th>
+                                <th>進攻</th>
+                                <th>防守</th>
+                                <th>總數</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
-    <section id="top-players-section" class="container top-players-section">
-        <!-- Top players injected by JS -->
-    </section>
+    <!-- Player Detail Modal -->
+    <div id="player-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closePlayerModal()">&times;</span>
 
-    <main class="container">
-        <section class="league-section">
-
-
-            <div id="league-grid">
-                <!-- Teams injected by JS -->
+            <!-- Player Profile Section -->
+            <div class="player-profile-section">
+                <div class="player-profile-photo">
+                    <img id="player-modal-photo" src="" alt="Player Photo">
+                </div>
+                <div class="player-profile-info">
+                    <h2 id="player-modal-name"></h2>
+                    <div class="player-averages">
+                        <div class="avg-stat">
+                            <span class="avg-value" id="avg-pts">0</span>
+                            <span class="avg-label">場均得分</span>
+                        </div>
+                        <div class="avg-stat">
+                            <span class="avg-value" id="avg-reb">0</span>
+                            <span class="avg-label">場均籃板</span>
+                        </div>
+                        <div class="avg-stat">
+                            <span class="avg-value" id="avg-ast">0</span>
+                            <span class="avg-label">場均助攻</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </section>
-    </main>
+
+            <div class="modal-section">
+                <h3>比賽紀錄</h3>
+                <div class="table-responsive">
+                    <table id="player-stats-table" class="detail-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2">日期</th>
+                                <th rowspan="2">對手</th>
+                                <th rowspan="2">得分</th>
+                                <th colspan="3">2分球</th>
+                                <th colspan="3">3分球</th>
+                                <th colspan="3">罰球</th>
+                                <th colspan="3">籃板</th>
+                                <th rowspan="2">助攻</th>
+                                <th rowspan="2">抄截</th>
+                                <th rowspan="2">阻攻</th>
+                                <th rowspan="2">犯規</th>
+                                <th rowspan="2">失誤</th>
+                            </tr>
+                            <tr>
+                                <th>進球</th>
+                                <th>出手</th>
+                                <th>命中率</th>
+                                <th>進球</th>
+                                <th>出手</th>
+                                <th>命中率</th>
+                                <th>進球</th>
+                                <th>出手</th>
+                                <th>命中率</th>
+                                <th>進攻</th>
+                                <th>防守</th>
+                                <th>總數</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer class="container">
         <p>&copy; 2025 胖胖星球 BEMAX Basketball League. All rights reserved.</p>

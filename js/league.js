@@ -1,44 +1,39 @@
 const SEASONS_URL = './data/seasons.config';
-const TEAMS_URL = './data/teams.csv';
 
 let seasons = [];
-let teams = [];
+let currentSeason = null;
+let loadedSeasonId = null; // Track loaded season
+
+// Global Data Cache
+let allTeams = [];
+let players = [];
+let roster = [];
+let games = [];
+let gameTeamStats = {};
+let gamePlayerStats = {};
+let topPlayersData = []; // Cache for top players
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        await loadData();
+        await loadSeasons();
         setupSeasonSelector();
-        renderTeams();
+        handleRouting();
+
+        // Handle browser back/forward
+        window.addEventListener('popstate', handleRouting);
     } catch (error) {
         console.error('Error initializing league page:', error);
     }
 });
 
-async function loadData() {
+async function loadSeasons() {
     const sRes = await fetch(SEASONS_URL);
     seasons = await sRes.json();
 }
 
-function parseCSV(text) {
-    // Remove BOM if present
-    const cleanText = text.replace(/^\ufeff/, '');
-    const lines = cleanText.split(/\r?\n/).filter(line => line.trim() !== '');
-    if (lines.length === 0) return [];
-
-    const headers = lines[0].split(',').map(h => h.trim());
-    return lines.slice(1).map(line => {
-        const values = line.split(',');
-        const obj = {};
-        headers.forEach((header, i) => {
-            obj[header] = values[i] ? values[i].trim() : '';
-        });
-        return obj;
-    });
-}
-
 function setupSeasonSelector() {
     const selector = document.getElementById('season-select');
-    selector.innerHTML = ''; // Clear existing
+    selector.innerHTML = '';
 
     seasons.forEach(season => {
         const option = document.createElement('option');
@@ -47,203 +42,556 @@ function setupSeasonSelector() {
         selector.appendChild(option);
     });
 
-    // Handle default season from URL or first season
-    const urlParams = new URLSearchParams(window.location.search);
-    let seasonId = urlParams.get('season');
-
-    if (!seasonId && seasons.length > 0) {
-        seasonId = seasons[0].id;
-        // Update URL without reload
-        const newUrl = `${window.location.pathname}?season=${seasonId}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
-    }
-
-    if (seasonId) {
-        selector.value = seasonId;
-    }
-
     selector.addEventListener('change', () => {
         const newSeasonId = selector.value;
-        const newUrl = `${window.location.pathname}?season=${newSeasonId}`;
-        window.history.pushState({ path: newUrl }, '', newUrl);
-        renderTeams();
+        updateUrlParams({ season: newSeasonId });
+        handleRouting();
     });
 }
 
-async function renderTeams() {
-    const gridContainer = document.getElementById('league-grid');
-    const selectedSeasonId = document.getElementById('season-select').value;
-    const selectedSeason = seasons.find(s => s.id === selectedSeasonId);
-    if (!selectedSeason) return;
-
-    const imageRoot = selectedSeason.images;
-    gridContainer.innerHTML = '<div class="loading">Loading teams...</div>';
-
-    try {
-        const tRes = await fetch(selectedSeason.paths.teams);
-        const tText = await tRes.text();
-        const teamsInSeason = parseCSV(tText);
-
-        gridContainer.innerHTML = '';
-
-        // Group teams by '組別'
-        const groups = {};
-        teamsInSeason.forEach(team => {
-            const groupName = team['組別'] || '其他';
-            if (!groups[groupName]) groups[groupName] = [];
-            groups[groupName].push(team);
-        });
-
-        const sortedGroupNames = Object.keys(groups).sort();
-        if (sortedGroupNames.length === 0) return;
-
-        // Create Groups Container
-        const groupsContainer = document.createElement('div');
-        groupsContainer.className = 'groups-horizontal-container';
-
-        sortedGroupNames.forEach(groupName => {
-            const groupColumn = document.createElement('div');
-            groupColumn.className = 'group-column';
-
-            groupColumn.innerHTML = `
-                <div class="fancy-group-header">
-                    <span class="header-accent"></span>
-                    <h2>${groupName}</h2>
-                </div>
-                <div class="league-grid">
-                    ${groups[groupName].map(team => {
-                const logoUrl = `${imageRoot}${team['隊徽']}`;
-                const detailUrl = `team.html?season=${selectedSeasonId}&team=${team['球隊ID']}`;
-                return `
-                            <div class="league-team-card">
-                                <div class="team-logo-wrapper">
-                                    <img src="${imageRoot}${team['隊徽']}" alt="${team['球隊名稱']}" class="league-team-logo" onerror="this.src='images/logo.png'">
-                                </div>
-                                <div class="team-details">
-                                    <h3 class="league-team-name">${team['球隊名稱']}</h3>
-                                    <div class="team-record">${team['勝']}勝 - ${team['敗']}敗</div>
-                                    <a href="${detailUrl}" class="view-team-btn">查看詳情</a>
-                                </div>
-                            </div>
-                        `;
-            }).join('')}
-                </div>
-            `;
-            groupsContainer.appendChild(groupColumn);
-        });
-
-        gridContainer.appendChild(groupsContainer);
-
-    } catch (error) {
-        console.error('Error loading teams for season:', error);
-        gridContainer.innerHTML = '<div class="error">Error loading teams.</div>';
+function updateUrlParams(params) {
+    const urlParams = new URLSearchParams(window.location.search);
+    for (const [key, value] of Object.entries(params)) {
+        if (value === null) {
+            urlParams.delete(key);
+        } else {
+            urlParams.set(key, value);
+        }
     }
-
-    // Load Top Players
-    await renderTopPlayers(selectedSeason);
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
 }
 
-async function renderTopPlayers(season) {
+async function handleRouting() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const seasonId = urlParams.get('season');
+    const teamId = urlParams.get('team');
+
+    // Set current season
+    if (seasonId) {
+        currentSeason = seasons.find(s => s.id === seasonId);
+    }
+    if (!currentSeason && seasons.length > 0) {
+        currentSeason = seasons[0];
+        // Update URL if no season specified
+        const newUrl = `${window.location.pathname}?season=${currentSeason.id}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+
+    if (currentSeason) {
+        document.getElementById('season-select').value = currentSeason.id;
+        // Load ALL data for the season if not already loaded
+        await loadSeasonData(currentSeason);
+    }
+
+    if (teamId) {
+        showTeamView(teamId);
+    } else {
+        showLeagueView(false);
+    }
+}
+
+async function loadSeasonData(season) {
+    if (loadedSeasonId === season.id) return; // Already loaded
+
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'global-loading';
+    loadingOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);color:white;display:flex;justify-content:center;align-items:center;z-index:9999;font-size:1.5rem;';
+    loadingOverlay.textContent = 'Loading Season Data...';
+    document.body.appendChild(loadingOverlay);
+
+    try {
+        const paths = season.paths;
+        const promises = [
+            fetch(paths.teams).then(r => r.text()).then(t => allTeams = parseCSV(t)),
+            fetch(paths.players).then(r => r.text()).then(t => players = parseCSV(t)),
+            fetch(paths.roster).then(r => r.text()).then(t => roster = parseCSV(t)),
+            fetch(paths.games).then(r => r.text()).then(t => games = parseCSV(t)),
+            fetch(paths.team_stats).then(r => r.text()).then(t => {
+                const data = parseCSV(t);
+                gameTeamStats = {};
+                data.forEach(row => {
+                    if (!gameTeamStats[row['賽事編號']]) gameTeamStats[row['賽事編號']] = [];
+                    gameTeamStats[row['賽事編號']].push(row);
+                });
+            }),
+            fetch(paths.player_stats).then(r => r.text()).then(t => {
+                const data = parseCSV(t);
+                gamePlayerStats = {};
+                data.forEach(row => {
+                    if (!gamePlayerStats[row['賽事編號']]) gamePlayerStats[row['賽事編號']] = [];
+                    gamePlayerStats[row['賽事編號']].push(row);
+                });
+            })
+        ];
+
+        if (paths.top_players) {
+            promises.push(fetch(paths.top_players).then(r => r.text()).then(t => topPlayersData = parseCSV(t)));
+        } else {
+            topPlayersData = [];
+        }
+
+        await Promise.all(promises);
+        loadedSeasonId = season.id;
+
+    } catch (error) {
+        console.error('Error loading season data:', error);
+        alert('Error loading data. Please refresh.');
+    } finally {
+        if (loadingOverlay) loadingOverlay.remove();
+    }
+}
+
+function showLeagueView(updateUrl = true) {
+    if (updateUrl) {
+        updateUrlParams({ team: null });
+    }
+
+    document.getElementById('league-view').style.display = 'block';
+    document.getElementById('team-view').style.display = 'none';
+    document.title = '胖胖星球 BEMAX Basketball League';
+    window.scrollTo(0, 0);
+
+    renderTeams();
+}
+
+function showTeamView(teamId) {
+    // Clear previous data to avoid flashing old content
+    document.getElementById('team-name').textContent = 'Loading...';
+    document.getElementById('team-logo').style.display = 'none';
+    document.getElementById('team-logo').src = '';
+    document.getElementById('team-hero-bg').style.backgroundImage = 'none';
+    document.getElementById('team-stats').innerHTML = '';
+    document.getElementById('roster-grid').innerHTML = '';
+    document.querySelector('#schedule-table tbody').innerHTML = '';
+
+    document.getElementById('league-view').style.display = 'none';
+    document.getElementById('team-view').style.display = 'block';
+    window.scrollTo(0, 0);
+
+    // Render using cached data
+    const team = allTeams.find(t => t['球隊ID'] === teamId);
+    if (team) {
+        renderTeamInfo(team);
+        renderRoster(teamId);
+        renderSchedule(teamId);
+        setupPlayerModal();
+        setupGameModal();
+    } else {
+        document.getElementById('team-name').textContent = 'Team Not Found';
+    }
+}
+
+function renderTeams() {
+    const gridContainer = document.getElementById('league-grid');
+    if (!currentSeason) return;
+
+    const imageRoot = currentSeason.images;
+    gridContainer.innerHTML = '';
+
+    // Group teams by '組別'
+    const groups = {};
+    allTeams.forEach(team => {
+        const groupName = team['組別'] || '其他';
+        if (!groups[groupName]) groups[groupName] = [];
+        groups[groupName].push(team);
+    });
+
+    const sortedGroupNames = Object.keys(groups).sort();
+    if (sortedGroupNames.length === 0) {
+        gridContainer.innerHTML = '<div class="error">No teams found.</div>';
+        return;
+    }
+
+    const groupsContainer = document.createElement('div');
+    groupsContainer.className = 'groups-horizontal-container';
+
+    sortedGroupNames.forEach(groupName => {
+        const groupColumn = document.createElement('div');
+        groupColumn.className = 'group-column';
+
+        groupColumn.innerHTML = `
+            <div class="fancy-group-header">
+                <span class="header-accent"></span>
+                <h2>${groupName}</h2>
+            </div>
+            <div class="league-grid">
+                ${groups[groupName].map(team => {
+            const logoUrl = `${imageRoot}${team['隊徽']}`;
+            // Removed updateUrlParams from onclick to avoid URL clutter if desired, 
+            // but kept handleRouting logic compatible. 
+            // User asked: "we don't need querystring of team name now... others should not reload datat source again."
+            // So we can just call showTeamView directly without updating URL if we want to be purely SPA without state in URL,
+            // OR we update URL but ensure handleRouting doesn't reload data.
+            // I will keep URL update for bookmarkability but ensure NO RELOAD (which loadSeasonData check handles).
+            return `
+                        <div class="league-team-card">
+                            <div class="team-logo-wrapper">
+                                <img src="${logoUrl}" alt="${team['球隊名稱']}" class="league-team-logo" onerror="this.src='images/logo.png'">
+                            </div>
+                            <div class="team-details">
+                                <h3 class="league-team-name">${team['球隊名稱']}</h3>
+                                <div class="team-record">${team['勝']}勝 - ${team['敗']}敗</div>
+                                <button onclick="updateUrlParams({team: '${team['球隊ID']}'}); handleRouting();" class="view-team-btn">查看詳情</button>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
+            </div>
+        `;
+        groupsContainer.appendChild(groupColumn);
+    });
+
+    gridContainer.appendChild(groupsContainer);
+
+    renderTopPlayers();
+}
+
+function renderTopPlayers() {
     const container = document.getElementById('top-players-section');
-    if (!season.paths.top_players) {
+    if (topPlayersData.length === 0) {
         container.innerHTML = '';
         return;
     }
 
-    container.innerHTML = '<div class="loading">Loading top players...</div>';
+    container.innerHTML = '';
 
-    try {
-        const res = await fetch(season.paths.top_players);
-        const text = await res.text();
-        const data = parseCSV(text);
+    const categories = {};
+    topPlayersData.forEach(item => {
+        const type = item['排名類型'];
+        if (!categories[type]) categories[type] = [];
+        categories[type].push(item);
+    });
 
-        container.innerHTML = '';
+    const categoryConfig = {
+        '得分排行': { icon: '🏀', label: '得分王' },
+        '籃板排行': { icon: '🙌', label: '籃板王' },
+        '助攻排行': { icon: '🤝', label: '助攻王' },
+        '抄截排行': { icon: '⚡', label: '抄截王' },
+        '火鍋排行': { icon: '✋', label: '火鍋王' }
+    };
 
-        if (data.length === 0) return;
+    const grid = document.createElement('div');
+    grid.className = 'top-players-grid';
 
-        // Group by '排名類型'
-        const categories = {};
-        data.forEach(item => {
-            const type = item['排名類型'];
-            if (!categories[type]) categories[type] = [];
-            categories[type].push(item);
-        });
+    for (const [type, catPlayers] of Object.entries(categories)) {
+        const config = categoryConfig[type] || { icon: '🏆', label: type };
+        catPlayers.sort((a, b) => parseInt(a['排名']) - parseInt(b['排名']));
 
-        // Sort categories order if needed, or just iterate
-        // Define explicit order and icons
-        const categoryConfig = {
-            '得分排行': { icon: '🏀', label: '得分王' },
-            '籃板排行': { icon: '🙌', label: '籃板王' },
-            '助攻排行': { icon: '🤝', label: '助攻王' },
-            '抄截排行': { icon: '⚡', label: '抄截王' },
-            '火鍋排行': { icon: '✋', label: '火鍋王' }
-        };
+        const card = document.createElement('div');
+        card.className = 'top-player-card';
 
-        const grid = document.createElement('div');
-        grid.className = 'top-players-grid';
+        let listHtml = '';
+        catPlayers.slice(0, 3).forEach(p => {
+            const rankClass = `rank-${p['排名']}`;
+            const value = p['平均得分'] || p['數值'] || Object.values(p).pop();
 
-        for (const [type, players] of Object.entries(categories)) {
-            const config = categoryConfig[type] || { icon: '🏆', label: type };
-
-            // Sort players by rank just in case
-            players.sort((a, b) => parseInt(a['排名']) - parseInt(b['排名']));
-
-            const card = document.createElement('div');
-            card.className = 'top-player-card';
-
-            let listHtml = '';
-            players.slice(0, 3).forEach(p => {
-                const rankClass = `rank-${p['排名']}`;
-                // Find team name from teams array if possible, or use CSV provided name
-                // The CSV has '球隊名稱'
-
-                // Value key depends on type? The CSV has '平均得分' for points, but maybe others for others?
-                // Looking at CSV sample: 
-                // 得分排行 -> 平均得分
-                // 籃板排行 -> (value is in last column?)
-                // Actually the sample shows '平均得分' as the last header, but the values for rebounds are there too.
-                // Let's assume the last column is the value, or we check specific keys.
-                // Sample headers: 排名類型,排名,球隊名稱,球隊ID,球員姓名,球員ID,平均得分
-                // Wait, the sample shows '平均得分' for all? Or does the header change?
-                // The sample provided:
-                // 排名類型,排名,球隊名稱,球隊ID,球員姓名,球員ID,平均得分
-                // ...
-                // 籃板排行,1,...,15.0
-                // So the last column seems to hold the value regardless of the header name '平均得分'.
-                // Let's get the last value from the object or specific key if it varies.
-                // Since parseCSV uses headers, and the header is '平均得分', we can use that key.
-                // But for safety, let's check if there's a generic value key or just use '平均得分'.
-
-                const value = p['平均得分'] || p['數值'] || Object.values(p).pop();
-
-                listHtml += `
-                    <div class="top-player-item">
-                        <div class="tp-rank ${rankClass}">${p['排名']}</div>
-                        <div class="tp-info">
-                            <div class="tp-name">${p['球員姓名']}</div>
-                            <div class="tp-team">${p['球隊名稱']}</div>
-                        </div>
-                        <div class="tp-value">${value}</div>
+            listHtml += `
+                <div class="top-player-item" onclick="openPlayerModal('${p['球員ID']}')" style="cursor: pointer;">
+                    <div class="tp-rank ${rankClass}">${p['排名']}</div>
+                    <div class="tp-info">
+                        <div class="tp-name">${p['球員姓名']}</div>
+                        <div class="tp-team">${p['球隊名稱']}</div>
                     </div>
-                `;
-            });
-
-            card.innerHTML = `
-                <div class="top-player-header">
-                    <div class="top-player-icon">${config.icon}</div>
-                    <div class="top-player-title">${config.label}</div>
-                </div>
-                <div class="top-player-list">
-                    ${listHtml}
+                    <div class="tp-value">${value}</div>
                 </div>
             `;
-            grid.appendChild(card);
-        }
+        });
 
-        container.appendChild(grid);
+        card.innerHTML = `
+            <div class="top-player-header">
+                <div class="top-player-icon">${config.icon}</div>
+                <div class="top-player-title">${config.label}</div>
+            </div>
+            <div class="top-player-list">
+                ${listHtml}
+            </div>
+        `;
+        grid.appendChild(card);
+    }
 
-    } catch (error) {
-        console.error('Error loading top players:', error);
-        container.innerHTML = ''; // Hide if error
+    container.appendChild(grid);
+}
+
+function parseCSV(text) {
+    const cleanText = text.replace(/^\ufeff/, '');
+    const lines = cleanText.split(/\r?\n/).filter(line => line.trim() !== '');
+    if (lines.length === 0) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim());
+    return lines.slice(1).map(line => {
+        const currentLine = line.split(',');
+        const obj = {};
+        headers.forEach((header, index) => {
+            obj[header] = currentLine[index] ? currentLine[index].trim() : '';
+        });
+        return obj;
+    });
+}
+
+function renderTeamInfo(teamInfo) {
+    if (!teamInfo['球隊名稱']) return;
+    document.title = `${teamInfo['球隊名稱']} - Team Profile`;
+    document.getElementById('team-name').textContent = teamInfo['球隊名稱'];
+    const imageRoot = currentSeason ? currentSeason.images : '';
+    const logoPath = teamInfo['隊徽'] ? `${imageRoot}${teamInfo['隊徽']}` : 'images/logo.png';
+    const logoImg = document.getElementById('team-logo');
+
+    logoImg.style.display = 'none';
+    logoImg.onload = function () { this.style.display = 'block'; };
+    logoImg.onerror = function () {
+        if (!this.src.includes('images/logo.png')) this.src = 'images/logo.png';
+        else this.style.display = 'block';
+    };
+    logoImg.src = logoPath;
+    if (logoImg.complete && logoImg.naturalHeight !== 0) logoImg.style.display = 'block';
+
+    document.getElementById('team-hero-bg').style.backgroundImage = `url('${imageRoot}${teamInfo['封面']}')`;
+
+    const statsContainer = document.getElementById('team-stats');
+    statsContainer.innerHTML = '';
+
+    const stats = {
+        'PPG': teamInfo['場均得分'],
+        'RPG': teamInfo['場均籃板'],
+        'APG': teamInfo['場均助攻'],
+        'OPPG': teamInfo['場均失分']
+    };
+
+    for (const [key, value] of Object.entries(stats)) {
+        if (!value) continue;
+        const statItem = document.createElement('div');
+        statItem.className = 'stat-item';
+        statItem.innerHTML = `<div class="stat-value">${value}</div><div class="stat-label">${key}</div>`;
+        statsContainer.appendChild(statItem);
     }
 }
+
+function renderRoster(teamId) {
+    const rosterGrid = document.getElementById('roster-grid');
+    rosterGrid.innerHTML = '';
+
+    const teamRoster = roster.filter(r => r['球隊ID'] === teamId);
+
+    teamRoster.forEach(r => {
+        const player = players.find(p => p['球員ID'] === r['球員ID']);
+        if (!player) return;
+
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        card.onclick = () => openPlayerModal(player['球員ID']);
+        card.style.cursor = 'pointer';
+
+        const imageRoot = currentSeason ? currentSeason.images : '';
+        const photoUrl = player['照片'] && player['照片'].trim() !== '' ? `${imageRoot}${player['照片']}` : 'https://via.placeholder.com/400x400?text=No+Image';
+
+        card.innerHTML = `
+            <div class="player-bg-number">${r['號碼']}</div>
+            <div class="player-image-container">
+                <img src="${photoUrl}" alt="${player['球員姓名']}" class="player-image" loading="lazy" onerror="this.src='https://via.placeholder.com/400x400?text=Error'">
+            </div>
+            <div class="player-info">
+                <div class="player-number">#${r['號碼']}</div>
+                <div class="player-name">${player['球員姓名']}</div>
+            </div>
+        `;
+        rosterGrid.appendChild(card);
+    });
+}
+
+function renderSchedule(teamId) {
+    const tableBody = document.querySelector('#schedule-table tbody');
+    tableBody.innerHTML = '';
+
+    const teamGames = games.filter(g => g['主隊ID'] === teamId || g['客隊ID'] === teamId);
+
+    teamGames.forEach(game => {
+        const row = document.createElement('tr');
+        let result = '-';
+        let resultClass = '';
+        const isHome = game['主隊ID'] === teamId;
+        const homeScore = parseInt(game['主隊得分']);
+        const awayScore = parseInt(game['客隊得分']);
+
+        if (!isNaN(homeScore) && !isNaN(awayScore)) {
+            if (isHome) result = homeScore > awayScore ? '勝' : '敗';
+            else result = awayScore > homeScore ? '勝' : '敗';
+            resultClass = result === '勝' ? 'win' : 'loss';
+        }
+
+        const opponentId = isHome ? game['客隊ID'] : game['主隊ID'];
+        const opponent = allTeams.find(t => t['球隊ID'] === opponentId) || { '球隊名稱': opponentId };
+
+        row.innerHTML = `
+            <td>${game['日期']}</td>
+            <td>${opponent['球隊名稱']}</td>
+            <td class="${resultClass}">${result}</td>
+            <td>${game['主隊得分']} - ${game['客隊得分']}</td>
+            <td>
+                ${game['賽事編號'] && gameTeamStats[game['賽事編號']] ?
+                `<button class="details-btn" onclick="openGameModal('${game['賽事編號']}')">View Stats</button>` :
+                '-'}
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function openPlayerModal(playerId) {
+    const player = players.find(p => p['球員ID'] === playerId);
+    if (!player) return;
+
+    const stats = [];
+    for (const gameId in gamePlayerStats) {
+        const s = gamePlayerStats[gameId].find(ps => ps['球員ID'] === playerId);
+        if (s) {
+            let game = games.find(g => g['賽事編號'] === gameId);
+            if (game) {
+                const playerTeamId = player['球隊ID'];
+                const isHome = game['主隊ID'] === playerTeamId;
+                const opponentId = isHome ? game['客隊ID'] : game['主隊ID'];
+                const opponent = allTeams.find(t => t['球隊ID'] === opponentId) || { '球隊名稱': opponentId };
+                stats.push({ ...s, date: game['日期'], opponent: opponent['球隊名稱'] });
+            }
+        }
+    }
+
+    const modal = document.getElementById('player-modal');
+    document.getElementById('player-modal-name').textContent = player['球員姓名'];
+    const imageRoot = currentSeason ? currentSeason.images : '';
+    const photoUrl = player['照片'] && player['照片'].trim() !== '' ? `${imageRoot}${player['照片']}` : 'https://via.placeholder.com/400x400?text=No+Image';
+    document.getElementById('player-modal-photo').src = photoUrl;
+
+    let totalPts = 0, totalReb = 0, totalAst = 0;
+    stats.forEach(s => {
+        totalPts += parseFloat(s['得分']) || 0;
+        totalReb += parseFloat(s['籃板']) || 0;
+        totalAst += parseFloat(s['助攻']) || 0;
+    });
+    const count = stats.length || 1; // Avoid division by zero
+    document.getElementById('avg-pts').textContent = (totalPts / count).toFixed(1);
+    document.getElementById('avg-reb').textContent = (totalReb / count).toFixed(1);
+    document.getElementById('avg-ast').textContent = (totalAst / count).toFixed(1);
+
+    const tbody = document.querySelector('#player-stats-table tbody');
+    tbody.innerHTML = '';
+
+    if (stats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="20">No stats available</td></tr>';
+    }
+
+    stats.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${s.date}</td>
+            <td>${s.opponent}</td>
+            <td>${s['得分']}</td>
+            <td>${s['兩分球進'] || '-'}</td>
+            <td>${s['兩分球投'] || '-'}</td>
+            <td>${s['兩分球投'] > 0 ? (s['兩分球進'] / s['兩分球投'] * 100).toFixed(1) + '%' : '-'}</td>
+            <td>${s['三分球進'] || '-'}</td>
+            <td>${s['三分球投'] || '-'}</td>
+            <td>${s['三分球投'] > 0 ? (s['三分球進'] / s['三分球投'] * 100).toFixed(1) + '%' : '-'}</td>
+            <td>${s['罰球進'] || '-'}</td>
+            <td>${s['罰球投'] || '-'}</td>
+            <td>${s['罰球投'] > 0 ? (s['罰球進'] / s['罰球投'] * 100).toFixed(1) + '%' : '-'}</td>
+            <td>${s['進攻籃板'] || '-'}</td>
+            <td>${s['防守籃板'] || '-'}</td>
+            <td>${s['籃板']}</td>
+            <td>${s['助攻']}</td>
+            <td>${s['抄截']}</td>
+            <td>${s['阻攻']}</td>
+            <td>${s['犯規']}</td>
+            <td>${s['失誤']}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    modal.style.display = 'block';
+}
+
+function openGameModal(gameId) {
+    const tStats = gameTeamStats[gameId];
+    const pStats = gamePlayerStats[gameId];
+    if (!tStats) return;
+
+    const modal = document.getElementById('game-modal');
+
+    const qBody = document.querySelector('#quarter-table tbody');
+    qBody.innerHTML = '';
+    tStats.forEach(ts => {
+        const team = allTeams.find(t => t['球隊ID'] === ts['球隊ID']) || { '球隊名稱': ts['球隊ID'] };
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${team['球隊名稱']}</td>
+            <td>${ts['第一節']}</td>
+            <td>${ts['第二節']}</td>
+            <td>${ts['第三節']}</td>
+            <td>${ts['第四節']}</td>
+        `;
+        qBody.appendChild(tr);
+    });
+
+    const bBody = document.querySelector('#box-score-table tbody');
+    bBody.innerHTML = '';
+    if (pStats) {
+        pStats.forEach(ps => {
+            const player = players.find(p => p['球員ID'] === ps['球員ID']) || { '球員姓名': ps['球員ID'] };
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${player['球員姓名']}</td>
+                <td>${ps['得分']}</td>
+                <td>${ps['兩分球進'] || '-'}</td>
+                <td>${ps['兩分球投'] || '-'}</td>
+                <td>${ps['兩分球投'] > 0 ? (ps['兩分球進'] / ps['兩分球投'] * 100).toFixed(1) + '%' : '-'}</td>
+                <td>${ps['三分球進'] || '-'}</td>
+                <td>${ps['三分球投'] || '-'}</td>
+                <td>${ps['三分球投'] > 0 ? (ps['三分球進'] / ps['三分球投'] * 100).toFixed(1) + '%' : '-'}</td>
+                <td>${ps['罰球進'] || '-'}</td>
+                <td>${ps['罰球投'] || '-'}</td>
+                <td>${ps['罰球投'] > 0 ? (ps['罰球進'] / ps['罰球投'] * 100).toFixed(1) + '%' : '-'}</td>
+                <td>${ps['進攻籃板'] || '-'}</td>
+                <td>${ps['防守籃板'] || '-'}</td>
+                <td>${ps['籃板']}</td>
+                <td>${ps['助攻']}</td>
+                <td>${ps['抄截']}</td>
+                <td>${ps['阻攻']}</td>
+                <td>${ps['犯規']}</td>
+                <td>${ps['失誤']}</td>
+            `;
+            bBody.appendChild(tr);
+        });
+    }
+
+    modal.style.display = 'block';
+}
+
+function setupPlayerModal() {
+    const modal = document.getElementById('player-modal');
+    if (!modal) return;
+
+    const closeBtn = modal.querySelector('.close-modal');
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+
+    window.onclick = (event) => {
+        if (event.target == modal) modal.style.display = "none";
+        const gameModal = document.getElementById('game-modal');
+        if (event.target == gameModal) gameModal.style.display = "none";
+    };
+
+    window.closePlayerModal = () => modal.style.display = 'none';
+}
+
+function setupGameModal() {
+    const modal = document.getElementById('game-modal');
+    if (!modal) return;
+    const closeBtn = modal.querySelector('.close-modal');
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+}
+
+window.showLeagueView = showLeagueView;
+window.updateUrlParams = updateUrlParams;
+window.handleRouting = handleRouting;
+window.openPlayerModal = openPlayerModal;
+window.openGameModal = openGameModal;
+window.closePlayerModal = () => document.getElementById('player-modal').style.display = 'none';
