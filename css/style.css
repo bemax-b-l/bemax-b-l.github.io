@@ -75,7 +75,7 @@ body {
 
 .back-link {
     position: absolute;
-    top: -2rem;
+    top: -4rem;
     left: 1rem;
     color: rgba(255, 255, 255, 0.6);
     text-decoration: none;
@@ -138,7 +138,7 @@ body {
 /* Stats */
 .team-stats {
     display: flex;
-    gap: 2rem;
+    gap: 3rem;
     justify-content: center;
     flex-wrap: wrap;
 }
@@ -334,7 +334,7 @@ footer {
     }
 
     .team-stats {
-        gap: 1rem;
+        gap: 3rem;
     }
 
     .stat-item {
@@ -347,7 +347,7 @@ footer {
     }
 
     .back-link {
-        top: 0.5rem;
+        top: -2rem;
         left: 0.5rem;
         font-size: 0.8rem;
     }
