@@ -14,11 +14,7 @@ let gamePlayerStats = {};
 document.addEventListener('DOMContentLoaded', async () => {
     // Try to show logo immediately if passed in URL
     const urlParams = new URLSearchParams(window.location.search);
-    const logoUrl = urlParams.get('logo');
-    if (logoUrl) {
-        const logoImg = document.getElementById('team-logo');
-        if (logoImg) logoImg.src = decodeURIComponent(logoUrl);
-    }
+
 
     try {
         await loadAllData();
@@ -113,7 +109,31 @@ function renderTeamInfo() {
     document.title = `${teamInfo['球隊名稱']} - Team Profile`;
     document.getElementById('team-name').textContent = teamInfo['球隊名稱'];
     const imageRoot = currentSeason ? currentSeason.images : '';
-    document.getElementById('team-logo').src = `${imageRoot}${teamInfo['隊徽']}`;
+    const logoPath = teamInfo['隊徽'] ? `${imageRoot}${teamInfo['隊徽']}` : 'images/logo.png';
+    const logoImg = document.getElementById('team-logo');
+
+    // Ensure hidden initially (redundant if HTML has it, but safe)
+    logoImg.style.display = 'none';
+
+    logoImg.onload = function () {
+        this.style.display = 'block';
+    };
+
+    logoImg.onerror = function () {
+        if (!this.src.includes('images/logo.png')) {
+            this.src = 'images/logo.png';
+        } else {
+            // If fallback fails, show anyway to indicate error
+            this.style.display = 'block';
+        }
+    };
+
+    logoImg.src = logoPath;
+
+    // Handle cached images
+    if (logoImg.complete && logoImg.naturalHeight !== 0) {
+        logoImg.style.display = 'block';
+    }
     document.getElementById('hero-bg').style.backgroundImage = `url('${imageRoot}${teamInfo['封面']}')`;
 
     const statsContainer = document.getElementById('team-stats');

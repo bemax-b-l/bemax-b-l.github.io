@@ -113,11 +113,11 @@ async function renderTeams() {
                 <div class="league-grid">
                     ${groups[groupName].map(team => {
                 const logoUrl = `${imageRoot}${team['隊徽']}`;
-                const detailUrl = `team.html?season=${selectedSeasonId}&team=${team['球隊ID']}&logo=${encodeURIComponent(logoUrl)}`;
+                const detailUrl = `team.html?season=${selectedSeasonId}&team=${team['球隊ID']}`;
                 return `
                             <div class="league-team-card">
                                 <div class="team-logo-wrapper">
-                                    <img src="${imageRoot}${team['隊徽']}" alt="${team['球隊名稱']}" class="league-team-logo" onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
+                                    <img src="${imageRoot}${team['隊徽']}" alt="${team['球隊名稱']}" class="league-team-logo" onerror="this.src='images/logo.png'">
                                 </div>
                                 <div class="team-details">
                                     <h3 class="league-team-name">${team['球隊名稱']}</h3>
