@@ -1,6 +1,42 @@
+# 資料使用警語（Data Usage Warning）
+
+本網站之所有資料來源皆來自 Google Excel（Google 試算表），並以公開方式發布供系統讀取與顯示。
+請務必注意：Google Excel 中的資料並非私人或封閉環境，任何人皆可能透過連結存取相關內容。
+
+請勿於 Google Excel 中輸入、儲存或上傳任何涉及個人隱私、敏感資訊或可識別個人身分之資料，包括但不限於：
+	•	身分證字號、護照號碼
+	•	聯絡電話、電子郵件、住址
+	•	個人帳號、密碼或其他機密資訊
+
+如因未遵守上述原則而造成任何資料外洩、爭議或損害，相關責任概由使用者自行負責，開發者不承擔任何責任。
+
+All data displayed on this website is sourced from Google Excel (Google Sheets) and is published in a publicly accessible format for system access and display.
+
+Please be advised that Google Sheets used for this website are not private or restricted environments, and the published data may be accessible to the public via shared links.
+
+Do not enter, store, or upload any personal, sensitive, or personally identifiable information (PII) into the Google Sheets, including but not limited to:
+	•	National ID or passport numbers
+	•	Phone numbers, email addresses, or physical addresses
+	•	Account credentials, passwords, or other confidential information
+
+Any data leakage, disputes, or damages resulting from non-compliance with the above principles shall be the sole responsibility of the user, and the developer assumes no liability.
+
+# 免責聲明（Disclaimer）
+
+本網站為 BEMAX Basketball League 之比賽紀錄與資訊展示用途，所有內容僅供參考。
+本站所呈現之比賽結果、球員數據、排名、圖片與相關資料，可能因人工輸入、資料來源或系統更新而產生延遲或誤差，BEMAX Basketball League 對其完整性、即時性或正確性不作任何明示或默示之保證。
+
+如有任何內容涉及侵權或需更正，請聯繫管理者，本站將於確認後盡速處理。
+
+This website is operated for BEMAX Basketball League as a record-keeping and informational platform. All content is provided for reference purposes only.
+
+Match results, player statistics, rankings, images, and related data displayed on this site may be subject to delays, inaccuracies, or omissions due to manual input, data sources, or system updates. BEMAX Basketball League makes no warranties, express or implied, regarding the accuracy, completeness, or timeliness of the information.
+
+If any content is found to infringe upon rights or requires correction, please contact the site administrator, and appropriate action will be taken promptly.
+
 # Static Team Profile Site
 
-This is a static website for the basketball team "胖胖星球HAPPY".
+This is a static website for the BEMAX basketball league.
 
 ## How to use
 
