@@ -107,14 +107,35 @@ body {
 }
 
 .league-logo-container {
-    width: auto;
-    height: auto;
-    margin: 0 auto -3rem;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+
+    /* Gradient Border */
+    border: 5px solid transparent;
+    background: linear-gradient(#ffffff, #ffffff) padding-box,
+        linear-gradient(135deg, var(--primary-color), var(--secondary-color)) border-box;
+
+    /* Glow Effect */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(78, 205, 196, 0.4);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease;
+}
+
+.league-logo-container:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6),
+        0 0 40px rgba(255, 107, 107, 0.6);
 }
 
 .league-logo {
     width: 100%;
-    max-height: 250px;
+    height: 100%;
     object-fit: contain;
 }
 
@@ -940,14 +961,22 @@ footer {
     font-weight: 700;
     color: var(--secondary-color);
     font-family: 'Outfit', sans-serif;
-}/* SPA View Styles */
-#league-view, #team-view {
+}
+
+/* SPA View Styles */
+#league-view,
+#team-view {
     animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* Ensure modals are on top */
