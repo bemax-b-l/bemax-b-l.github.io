@@ -12,12 +12,17 @@ let games = [];
 let gameTeamStats = {};
 let gamePlayerStats = {};
 let topPlayersData = []; // Cache for top players
+let gameVideos = []; // Cache for game videos
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await loadSeasons();
         setupSeasonSelector();
         handleRouting();
+
+        // Setup modals for index page
+        setupGameModal();
+        setupPlayerModal();
 
         // Handle browser back/forward
         window.addEventListener('popstate', handleRouting);
@@ -129,6 +134,12 @@ async function loadSeasonData(season) {
             promises.push(fetch(paths.top_players).then(r => r.text()).then(t => topPlayersData = parseCSV(t)));
         } else {
             topPlayersData = [];
+        }
+
+        if (paths.game_videos) {
+            promises.push(fetch(paths.game_videos).then(r => r.text()).then(t => gameVideos = parseCSV(t)));
+        } else {
+            gameVideos = [];
         }
 
         await Promise.all(promises);
@@ -245,6 +256,7 @@ function renderTeams() {
     gridContainer.appendChild(groupsContainer);
 
     renderTopPlayers();
+    renderFeaturedGames();
 }
 
 function renderTopPlayers() {
@@ -255,6 +267,15 @@ function renderTopPlayers() {
     }
 
     container.innerHTML = '';
+
+    // Create section header
+    const header = document.createElement('div');
+    header.className = 'fancy-group-header';
+    header.innerHTML = `
+        <span class="header-accent"></span>
+        <h2>頂尖選手</h2>
+    `;
+    container.appendChild(header);
 
     const categories = {};
     topPlayersData.forEach(item => {
@@ -312,6 +333,67 @@ function renderTopPlayers() {
 
     container.appendChild(grid);
 }
+
+function renderFeaturedGames() {
+    const container = document.getElementById('featured-games-section');
+
+    // Filter videos where 首頁置放 = "Yes"
+    const featuredVideos = gameVideos.filter(v => v['首頁置放'] && v['首頁置放'].toLowerCase() === 'yes');
+
+    if (featuredVideos.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = '';
+
+    // Create section header
+    const header = document.createElement('div');
+    header.className = 'fancy-group-header';
+    header.innerHTML = `
+        <span class="header-accent"></span>
+        <h2>精采賽事</h2>
+    `;
+    container.appendChild(header);
+
+    // Create grid for featured games
+    const grid = document.createElement('div');
+    grid.className = 'featured-games-grid';
+
+    featuredVideos.forEach(video => {
+        const gameId = video['賽事編號'];
+        const game = games.find(g => g['賽事編號'] === gameId);
+
+        if (!game) return;
+
+        const homeTeam = allTeams.find(t => t['球隊ID'] === game['主隊ID']) || { '球隊名稱': game['主隊ID'] };
+        const awayTeam = allTeams.find(t => t['球隊ID'] === game['客隊ID']) || { '球隊名稱': game['客隊ID'] };
+
+        const card = document.createElement('div');
+        card.className = 'featured-game-card';
+
+        const videoUrl = video['影片連結'];
+        const videoTitle = video['影片標題'] || '觀看影片';
+
+        card.innerHTML = `
+            <div class="featured-game-date">${game['日期']}</div>
+            <div class="featured-game-teams">
+                <div class="featured-team">${homeTeam['球隊名稱']}</div>
+                <div class="featured-score">${game['主隊得分']} - ${game['客隊得分']}</div>
+                <div class="featured-team">${awayTeam['球隊名稱']}</div>
+            </div>
+            <div class="featured-game-actions">
+                ${videoUrl ? `<a href="${videoUrl}" target="_blank" class="featured-video-btn">${videoTitle}</a>` : ''}
+                ${gameTeamStats[gameId] ? `<button class="details-btn" onclick="openGameModal('${gameId}')">查看數據</button>` : ''}
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+
+    container.appendChild(grid);
+}
+
 
 function parseCSV(text) {
     const cleanText = text.replace(/^\ufeff/, '');
@@ -422,6 +504,17 @@ function renderSchedule(teamId) {
         const opponentId = isHome ? game['客隊ID'] : game['主隊ID'];
         const opponent = allTeams.find(t => t['球隊ID'] === opponentId) || { '球隊名稱': opponentId };
 
+        // Find video links for this game
+        const videoData = gameVideos.filter(v => v['賽事編號'] === game['賽事編號']);
+        let videoLinks = '';
+        if (videoData.length > 0) {
+            videoLinks = videoData.map(v => {
+                const label = v['影片標題'] || '影片';
+                const url = v['影片連結'];
+                return url ? `<a href=\"${url}\" target=\"_blank\" class=\"video-link\">${label}</a>` : '';
+            }).filter(link => link).join(' ');
+        }
+
         row.innerHTML = `
             <td>${game['日期']}</td>
             <td>${opponent['球隊名稱']}</td>
@@ -432,6 +525,7 @@ function renderSchedule(teamId) {
                 `<button class="details-btn" onclick="openGameModal('${game['賽事編號']}')">View Stats</button>` :
                 '-'}
             </td>
+            <td>${videoLinks || '-'}</td>
         `;
         tableBody.appendChild(row);
     });
