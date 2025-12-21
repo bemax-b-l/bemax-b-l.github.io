@@ -1,4 +1,4 @@
-const SEASONS_URL = './data/seasons.config';
+const GLOBAL_CONFIG_URL = './data/global.config';
 
 let seasons = [];
 let currentSeason = null;
@@ -32,8 +32,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadSeasons() {
-    const sRes = await fetch(SEASONS_URL);
-    seasons = await sRes.json();
+    // Load global config
+    const configRes = await fetch(GLOBAL_CONFIG_URL);
+    const globalConfig = await configRes.json();
+
+    // Fetch seasons CSV from the URL in global config
+    const seasonsRes = await fetch(globalConfig.seasons);
+    const seasonsCSV = await seasonsRes.text();
+    const seasonsData = parseCSV(seasonsCSV);
+
+    // Transform CSV data to the expected format
+    seasons = seasonsData.map(row => ({
+        id: row.id,
+        name: row.name,
+        images: row.images,
+        paths: {
+            teams: row.teams,
+            players: row.players,
+            roster: row.roster,
+            games: row.games,
+            team_stats: row.team_stats,
+            player_stats: row.player_stats,
+            top_players: row.top_players,
+            game_videos: row.game_videos
+        }
+    }));
 }
 
 function setupSeasonSelector() {
