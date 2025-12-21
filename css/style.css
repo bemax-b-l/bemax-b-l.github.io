@@ -1178,7 +1178,8 @@ footer {
 
 /* Sponsor Section Styles */
 .sponsors-section {
-    padding: 4rem 0;
+    padding: 4rem 2rem;
+    /* Aligned with .container padding */
     margin-bottom: 3rem;
     position: relative;
 }
