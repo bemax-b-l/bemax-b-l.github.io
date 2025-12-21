@@ -13,11 +13,13 @@ let gameTeamStats = {};
 let gamePlayerStats = {};
 let topPlayersData = []; // Cache for top players
 let gameVideos = []; // Cache for game videos
+let sponsors = []; // Cache for sponsors
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await loadSeasons();
         setupSeasonSelector();
+        renderSponsors(); // Render sponsors after loading
         handleRouting();
 
         // Setup modals for index page
@@ -57,6 +59,18 @@ async function loadSeasons() {
             game_videos: row.game_videos
         }
     }));
+
+    // Fetch sponsor data if available
+    if (globalConfig.sponsor) {
+        try {
+            const sponsorRes = await fetch(globalConfig.sponsor);
+            const sponsorCSV = await sponsorRes.text();
+            sponsors = parseCSV(sponsorCSV);
+        } catch (error) {
+            console.error('Error loading sponsor data:', error);
+            sponsors = [];
+        }
+    }
 }
 
 function setupSeasonSelector() {
@@ -416,6 +430,59 @@ function renderFeaturedGames() {
 
     container.appendChild(grid);
 }
+
+function renderSponsors() {
+    const container = document.getElementById('sponsors-section');
+    if (!container) return; // Section doesn't exist on this page
+
+    if (sponsors.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    const grid = document.getElementById('sponsors-grid');
+    grid.innerHTML = '';
+
+    sponsors.forEach((sponsor, index) => {
+        const card = document.createElement('a');
+        card.className = 'sponsor-card';
+        // Add staggered animation delay
+        card.style.animationDelay = `${index * 0.1}s`;
+
+        // Use Chinese column names from CSV: 贊助商, LOGO, 網址
+        const url = sponsor['網址'] || sponsor.url || sponsor.URL || '#';
+        card.href = url;
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+
+        const name = sponsor['贊助商'] || sponsor.name || sponsor.Name || sponsor['名稱'] || 'Sponsor';
+        let logo = sponsor['LOGO'] || sponsor.logo || sponsor.Logo || sponsor['標誌'] || '';
+
+        // Fix path: prepend 'images/' if it's a relative path starting with 'sponsor/'
+        if (logo && logo.startsWith('sponsor/')) {
+            logo = 'images/' + logo;
+        }
+
+        let content = '';
+        if (logo && logo.trim() !== '') {
+            // Display logo with fallback to name on error
+            content = `
+                <img src="${logo}" alt="${name}" class="sponsor-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="sponsor-name" style="display: none;">${name}</div>
+            `;
+        } else {
+            // Display name only
+            content = `<div class="sponsor-name">${name}</div>`;
+        }
+
+        // Add shine overlay element
+        card.innerHTML = `${content}<div class="shine"></div>`;
+
+        grid.appendChild(card);
+    });
+}
+
 
 
 function parseCSV(text) {
