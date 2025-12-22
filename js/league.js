@@ -14,6 +14,7 @@ let gamePlayerStats = {};
 let topPlayersData = []; // Cache for top players
 let gameVideos = []; // Cache for game videos
 let sponsors = []; // Cache for sponsors
+let documentations = []; // Cache for documentation (rules, terms, etc.)
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -25,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Setup modals for index page
         setupGameModal();
         setupPlayerModal();
+        setupDocModal();
 
         // Handle browser back/forward
         window.addEventListener('popstate', handleRouting);
@@ -69,6 +71,18 @@ async function loadSeasons() {
         } catch (error) {
             console.error('Error loading sponsor data:', error);
             sponsors = [];
+        }
+    }
+
+    // Fetch documentation data if available
+    if (globalConfig.docs) {
+        try {
+            const docsRes = await fetch(globalConfig.docs);
+            const docsCSV = await docsRes.text();
+            documentations = parseCSV(docsCSV);
+        } catch (error) {
+            console.error('Error loading documentation data:', error);
+            documentations = [];
         }
     }
 }
@@ -487,15 +501,60 @@ function renderSponsors() {
 
 function parseCSV(text) {
     const cleanText = text.replace(/^\ufeff/, '');
-    const lines = cleanText.split(/\r?\n/).filter(line => line.trim() !== '');
-    if (lines.length === 0) return [];
+    const result = [];
+    let row = [];
+    let field = '';
+    let inQuotes = false;
 
-    const headers = lines[0].split(',').map(h => h.trim());
-    return lines.slice(1).map(line => {
-        const currentLine = line.split(',');
+    for (let i = 0; i < cleanText.length; i++) {
+        const char = cleanText[i];
+        const nextChar = cleanText[i + 1];
+
+        if (inQuotes) {
+            if (char === '"' && nextChar === '"') {
+                field += '"';
+                i++;
+            } else if (char === '"') {
+                inQuotes = false;
+            } else {
+                field += char;
+            }
+        } else {
+            if (char === '"') {
+                inQuotes = true;
+            } else if (char === ',') {
+                row.push(field);
+                field = '';
+            } else if (char === '\n' || char === '\r') {
+                row.push(field);
+                if (row.length > 0 && (row.length > 1 || row[0] !== '')) {
+                    result.push(row);
+                }
+                row = [];
+                field = '';
+                if (char === '\r' && nextChar === '\n') {
+                    i++;
+                }
+            } else {
+                field += char;
+            }
+        }
+    }
+
+    if (field || row.length > 0) {
+        row.push(field);
+        if (row.length > 0 && (row.length > 1 || row[0] !== '')) {
+            result.push(row);
+        }
+    }
+
+    if (result.length === 0) return [];
+
+    const headers = result[0].map(h => h.trim());
+    return result.slice(1).map(r => {
         const obj = {};
         headers.forEach((header, index) => {
-            obj[header] = currentLine[index] ? currentLine[index].trim() : '';
+            obj[header] = r[index] !== undefined ? r[index].trim() : '';
         });
         return obj;
     });
@@ -778,4 +837,37 @@ window.updateUrlParams = updateUrlParams;
 window.handleRouting = handleRouting;
 window.openPlayerModal = openPlayerModal;
 window.openGameModal = openGameModal;
+window.openDocModal = openDocModal;
 window.closePlayerModal = () => document.getElementById('player-modal').style.display = 'none';
+
+function openDocModal(type) {
+    const doc = documentations.find(d => d['類型'] === type);
+    if (!doc) {
+        console.error(`Documentation type "${type}" not found.`);
+        return;
+    }
+
+    const modal = document.getElementById('doc-modal');
+    if (!modal) return;
+
+    document.getElementById('doc-modal-title').textContent = type;
+    document.getElementById('doc-modal-body').innerHTML = doc['內容'];
+
+    modal.style.display = 'block';
+}
+
+function setupDocModal() {
+    const modal = document.getElementById('doc-modal');
+    if (!modal) return;
+
+    const closeBtn = modal.querySelector('.close-modal');
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+
+    window.onclick = (event) => {
+        if (event.target == modal) modal.style.display = "none";
+        const playerModal = document.getElementById('player-modal');
+        if (event.target == playerModal) playerModal.style.display = "none";
+        const gameModal = document.getElementById('game-modal');
+        if (event.target == gameModal) gameModal.style.display = "none";
+    };
+}

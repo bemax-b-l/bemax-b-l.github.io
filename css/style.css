@@ -1327,3 +1327,90 @@ footer {
         font-size: 1.1rem;
     }
 }
+/* Documentation Modal & Rules Button */
+.docs-controls {
+    display: flex;
+    align-items: center;
+}
+
+.rules-btn {
+    background: linear-gradient(135deg, var(--primary-color), #ff8e8e);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 3rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.rules-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5);
+    filter: brightness(1.1);
+}
+
+.rules-btn:active {
+    transform: translateY(-1px);
+}
+
+.btn-icon {
+    font-size: 1.2rem;
+}
+
+.doc-body {
+    color: var(--text-color);
+    line-height: 1.8;
+    font-size: 1.05rem;
+    padding: 1rem 0;
+}
+
+.doc-body h1, .doc-body h2, .doc-body h3 {
+    color: var(--secondary-color);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.doc-body h1 { font-size: 2.2rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; }
+.doc-body h2 { font-size: 1.8rem; border-left: 4px solid var(--primary-color); padding-left: 1rem; }
+.doc-body h3 { font-size: 1.4rem; }
+
+.doc-body p {
+    margin-bottom: 1.2rem;
+}
+
+.doc-body ul, .doc-body ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.doc-body li {
+    margin-bottom: 0.5rem;
+}
+
+.doc-body strong {
+    color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .league-controls {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .season-selector-wrapper {
+        width: 100%;
+    }
+    
+    .rules-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

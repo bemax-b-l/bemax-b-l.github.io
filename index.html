@@ -45,6 +45,11 @@
                         <!-- Seasons injected by JS -->
                     </select>
                 </div>
+                <div class="docs-controls">
+                    <button class="rules-btn" onclick="openDocModal('比賽規則')">
+                        <span class="btn-icon">📋</span> 比賽規則
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -245,10 +250,21 @@
         </div>
     </div>
 
+    <!-- Documentation Modal -->
+    <div id="doc-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="doc-modal-title"></h2>
+            <div id="doc-modal-body" class="doc-body">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
+
     <footer class="container">
         <p>&copy; 2025 胖胖星球 BEMAX Basketball League. All rights reserved.</p>
         <p class="footer-terms-wrapper">
-            <a href="terms.html" class="footer-terms-link">隱私政策與使用條款</a>
+            <a href="#" class="footer-terms-link" onclick="openDocModal('隱私政策與使用條款'); return false;">隱私政策與使用條款</a>
         </p>
     </footer>
 
