@@ -18,6 +18,7 @@ let documentations = []; // Cache for documentation (rules, terms, etc.)
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        showLoading('Loading League Data...');
         await loadSeasons();
         setupSeasonSelector();
         renderSponsors(); // Render sponsors after loading
@@ -32,8 +33,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.addEventListener('popstate', handleRouting);
     } catch (error) {
         console.error('Error initializing league page:', error);
+    } finally {
+        hideLoading();
     }
 });
+
+function showLoading(msg = 'Loading...') {
+    const overlay = document.getElementById('loading-overlay');
+    const text = document.getElementById('loading-text');
+    if (overlay && text) {
+        text.textContent = msg;
+        overlay.style.display = 'flex';
+    }
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
 
 async function loadSeasons() {
     // Load global config
@@ -150,11 +169,7 @@ async function handleRouting() {
 async function loadSeasonData(season) {
     if (loadedSeasonId === season.id) return; // Already loaded
 
-    const loadingOverlay = document.createElement('div');
-    loadingOverlay.id = 'global-loading';
-    loadingOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);color:white;display:flex;justify-content:center;align-items:center;z-index:9999;font-size:1.5rem;';
-    loadingOverlay.textContent = 'Loading Season Data...';
-    document.body.appendChild(loadingOverlay);
+    showLoading(`Loading Season ${season.name}...`);
 
     try {
         const paths = season.paths;
@@ -200,7 +215,7 @@ async function loadSeasonData(season) {
         console.error('Error loading season data:', error);
         alert('Error loading data. Please refresh.');
     } finally {
-        if (loadingOverlay) loadingOverlay.remove();
+        hideLoading();
     }
 }
 
