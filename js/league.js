@@ -664,8 +664,15 @@ function renderSchedule(teamId) {
             }).filter(link => link).join(' ');
         }
 
+        const dateTimeParts = game['日期'].trim().split(/\s+/);
+        const date = dateTimeParts[0] || game['日期'];
+        const time = dateTimeParts[1] || '';
+        const location = game['地點'] || '';
+
         row.innerHTML = `
-            <td>${game['日期']}</td>
+            <td>${date}</td>
+            <td>${time}</td>
+            <td>${location}</td>
             <td>${opponent['球隊名稱']}</td>
             <td class="${resultClass}">${result}</td>
             <td>${game['主隊得分']} - ${game['客隊得分']}</td>
@@ -869,5 +876,86 @@ function setupDocModal() {
         if (event.target == playerModal) playerModal.style.display = "none";
         const gameModal = document.getElementById('game-modal');
         if (event.target == gameModal) gameModal.style.display = "none";
+        const scheduleModal = document.getElementById('schedule-modal');
+        if (event.target == scheduleModal) scheduleModal.style.display = "none";
     };
+}
+
+// Schedule Modal Logic
+window.openScheduleModal = function () {
+    const modal = document.getElementById('schedule-modal');
+    if (!modal) return;
+
+    // Check if we need to setup close logic (only once)
+    if (!modal.dataset.setup) {
+        setupScheduleModal();
+        modal.dataset.setup = "true";
+    }
+
+    renderLeagueSchedule();
+    modal.style.display = 'block';
+};
+
+function setupScheduleModal() {
+    const modal = document.getElementById('schedule-modal');
+    if (!modal) return;
+
+    const closeBtn = modal.querySelector('.close-modal');
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+}
+
+function renderLeagueSchedule() {
+    const tableBody = document.querySelector('#league-schedule-table tbody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    // Sort games by date? currently CSV order is used
+    games.forEach(game => {
+        const row = document.createElement('tr');
+
+        const homeScore = parseInt(game['主隊得分']);
+        const awayScore = parseInt(game['客隊得分']);
+
+        // Find team names from IDs
+        const homeTeam = allTeams.find(t => t['球隊ID'] === game['主隊ID']) || { '球隊名稱': game['主隊ID'] };
+        const awayTeam = allTeams.find(t => t['球隊ID'] === game['客隊ID']) || { '球隊名稱': game['客隊ID'] };
+
+        // Reuse video logic
+        const videoData = gameVideos.filter(v => v['賽事編號'] === game['賽事編號']);
+        let videoLinks = '';
+        if (videoData.length > 0) {
+            videoLinks = videoData.map(v => {
+                const label = v['影片標題'] || '影片';
+                const url = v['影片連結'];
+                return url ? `<a href="${url}" target="_blank" class="video-link">${label}</a>` : '';
+            }).filter(link => link).join(' ');
+        }
+
+        // Score Display
+        let scoreDisplay = '-';
+        if (!isNaN(homeScore) && !isNaN(awayScore)) {
+            scoreDisplay = `${game['主隊得分']} - ${game['客隊得分']}`;
+        }
+
+        const dateTimeParts = game['日期'].trim().split(/\s+/);
+        const date = dateTimeParts[0] || game['日期'];
+        const time = dateTimeParts[1] || '';
+        const location = game['地點'] || '';
+
+        row.innerHTML = `
+            <td>${date}</td>
+            <td>${time}</td>
+            <td>${location}</td>
+            <td>${homeTeam['球隊名稱']}</td>
+            <td>${scoreDisplay}</td>
+            <td>${awayTeam['球隊名稱']}</td>
+            <td>
+                ${game['賽事編號'] && gameTeamStats[game['賽事編號']] ?
+                `<button class="details-btn" onclick="openGameModal('${game['賽事編號']}')">View Stats</button>` :
+                '-'}
+            </td>
+            <td>${videoLinks || '-'}</td>
+        `;
+        tableBody.appendChild(row);
+    });
 }

@@ -46,11 +46,14 @@
                     </select>
                 </div>
                 <div class="docs-controls">
+                    <button class="rules-btn" onclick="openDocModal('報名資訊')">
+                        <span class="btn-icon">📝</span> 報名資訊
+                    </button>
                     <button class="rules-btn" onclick="openDocModal('比賽規則')">
                         <span class="btn-icon">📋</span> 比賽規則
                     </button>
-                    <button class="rules-btn" onclick="openDocModal('報名資訊')">
-                        <span class="btn-icon">📝</span> 報名資訊
+                    <button class="rules-btn" onclick="openScheduleModal()">
+                        <span class="btn-icon">📅</span> 賽程表
                     </button>
                 </div>
             </div>
@@ -98,6 +101,8 @@
                         <thead>
                             <tr>
                                 <th>日期</th>
+                                <th>時間</th>
+                                <th>地點</th>
                                 <th>對手</th>
                                 <th>結果</th>
                                 <th>比分</th>
@@ -264,6 +269,33 @@
         </div>
     </div>
 
+    <!-- Schedule Modal -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>賽程表</h2>
+            <div class="table-responsive">
+                <table class="schedule-table" id="league-schedule-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>時間</th>
+                            <th>地點</th>
+                            <th>主隊</th>
+                            <th>比分</th>
+                            <th>客隊</th>
+                            <th>詳情</th>
+                            <th>影片</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <footer class="container">
         <p>&copy; 2025 胖胖星球 BEMAX Basketball League. All rights reserved.</p>
         <p class="footer-terms-wrapper">
@@ -271,7 +303,7 @@
         </p>
     </footer>
 
-    <script src="js/league.js?v=20251220"></script>
+    <script src="js/league.js?v=20251223_5"></script>
 </body>
 
 </html>
