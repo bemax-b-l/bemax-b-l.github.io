@@ -99,6 +99,7 @@ async function loadSeasons() {
             const docsRes = await fetch(globalConfig.docs);
             const docsCSV = await docsRes.text();
             documentations = parseCSV(docsCSV);
+            renderLatestNews();
         } catch (error) {
             console.error('Error loading documentation data:', error);
             documentations = [];
@@ -230,6 +231,30 @@ function showLeagueView(updateUrl = true) {
     window.scrollTo(0, 0);
 
     renderTeams();
+}
+
+function renderLatestNews() {
+    const newsSection = document.getElementById('latest-news-section');
+    if (!newsSection) return;
+
+    const newsItem = documentations.find(d => d['類型'] === '最新消息');
+
+    if (newsItem && newsItem['內容'] && newsItem['內容'].trim() !== '') {
+        newsSection.innerHTML = `
+            <div class="news-card">
+                <div class="news-header">
+                    <span class="btn-icon">📢</span>
+                    <span class="news-title">最新消息</span>
+                </div>
+                <div class="news-content">
+                    ${newsItem['內容']}
+                </div>
+            </div>
+        `;
+        newsSection.style.display = 'block';
+    } else {
+        newsSection.style.display = 'none';
+    }
 }
 
 function showTeamView(teamId) {

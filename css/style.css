@@ -1327,6 +1327,7 @@ footer {
         font-size: 1.1rem;
     }
 }
+
 /* Documentation Modal & Rules Button */
 .docs-controls {
     display: flex;
@@ -1371,21 +1372,36 @@ footer {
     padding: 1rem 0;
 }
 
-.doc-body h1, .doc-body h2, .doc-body h3 {
+.doc-body h1,
+.doc-body h2,
+.doc-body h3 {
     color: var(--secondary-color);
     margin-top: 2rem;
     margin-bottom: 1rem;
 }
 
-.doc-body h1 { font-size: 2.2rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; }
-.doc-body h2 { font-size: 1.8rem; border-left: 4px solid var(--primary-color); padding-left: 1rem; }
-.doc-body h3 { font-size: 1.4rem; }
+.doc-body h1 {
+    font-size: 2.2rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+}
+
+.doc-body h2 {
+    font-size: 1.8rem;
+    border-left: 4px solid var(--primary-color);
+    padding-left: 1rem;
+}
+
+.doc-body h3 {
+    font-size: 1.4rem;
+}
 
 .doc-body p {
     margin-bottom: 1.2rem;
 }
 
-.doc-body ul, .doc-body ol {
+.doc-body ul,
+.doc-body ol {
     margin-bottom: 1.5rem;
     padding-left: 1.5rem;
 }
@@ -1404,16 +1420,17 @@ footer {
         gap: 1rem;
         align-items: stretch;
     }
-    
+
     .season-selector-wrapper {
         width: 100%;
     }
-    
+
     .rules-btn {
         width: 100%;
         justify-content: center;
     }
 }
+
 /* Loading Overlay */
 .loading-overlay {
     position: fixed;
@@ -1454,4 +1471,39 @@ footer {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Latest News Section */
+.latest-news-section {
+    margin-bottom: 2rem;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.news-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-left: 5px solid var(--secondary-color);
+}
+
+.news-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.news-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.news-content {
+    color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1.6;
 }
