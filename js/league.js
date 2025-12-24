@@ -455,8 +455,18 @@ function renderFeaturedGames() {
     const grid = document.createElement('div');
     grid.className = 'featured-games-grid';
 
+    // Group videos by Game ID
+    const groupedGames = {};
     featuredVideos.forEach(video => {
         const gameId = video['賽事編號'];
+        if (!groupedGames[gameId]) {
+            groupedGames[gameId] = [];
+        }
+        groupedGames[gameId].push(video);
+    });
+
+    Object.keys(groupedGames).forEach(gameId => {
+        const gameVideosList = groupedGames[gameId];
         const game = games.find(g => g['賽事編號'] === gameId);
 
         if (!game) return;
@@ -467,11 +477,18 @@ function renderFeaturedGames() {
         const card = document.createElement('div');
         card.className = 'featured-game-card';
 
-        const videoUrl = video['連結'];
-        const isPhoto = video['類型'] === '照片';
-        const defaultTitle = isPhoto ? '觀看照片' : '觀看影片';
-        const videoTitle = video['影片標題'] || defaultTitle;
-        const btnClass = isPhoto ? 'featured-photo-btn' : 'featured-video-btn'; // You might need to add css for this, or reuse video-btn
+        // Generate buttons for all videos/photos for this game
+        const actionButtons = gameVideosList.map(video => {
+            const videoUrl = video['連結'];
+            if (!videoUrl) return '';
+
+            const isPhoto = video['類型'] === '照片';
+            const defaultTitle = isPhoto ? '觀看照片' : '觀看影片';
+            const videoTitle = video['影片標題'] || defaultTitle;
+            const btnClass = isPhoto ? 'featured-photo-btn' : 'featured-video-btn';
+
+            return `<a href="${videoUrl}" target="_blank" class="${btnClass}">${videoTitle}</a>`;
+        }).join('');
 
         card.innerHTML = `
             <div class="featured-game-date">${game['日期']}</div>
@@ -481,7 +498,7 @@ function renderFeaturedGames() {
                 <div class="featured-team">${awayTeam['球隊名稱']}</div>
             </div>
             <div class="featured-game-actions">
-                ${videoUrl ? `<a href="${videoUrl}" target="_blank" class="${btnClass}">${videoTitle}</a>` : ''}
+                ${actionButtons}
                 ${gameTeamStats[gameId] ? `<button class="details-btn" onclick="openGameModal('${gameId}')">查看數據</button>` : ''}
             </div>
         `;
