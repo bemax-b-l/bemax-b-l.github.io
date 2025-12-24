@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadSeasons();
         setupSeasonSelector();
         renderSponsors(); // Render sponsors after loading
-        handleRouting();
+        await handleRouting();
 
         // Setup modals for index page
         setupGameModal();
