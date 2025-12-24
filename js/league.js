@@ -77,7 +77,8 @@ async function loadSeasons() {
             team_stats: row.team_stats,
             player_stats: row.player_stats,
             top_players: row.top_players,
-            game_videos: row.game_videos
+            top_players: row.top_players,
+            game_links: row.game_links || row.game_videos
         }
     }));
 
@@ -203,8 +204,8 @@ async function loadSeasonData(season) {
             topPlayersData = [];
         }
 
-        if (paths.game_videos) {
-            promises.push(fetch(paths.game_videos).then(r => r.text()).then(t => gameVideos = parseCSV(t)));
+        if (paths.game_links) {
+            promises.push(fetch(paths.game_links).then(r => r.text()).then(t => gameVideos = parseCSV(t)));
         } else {
             gameVideos = [];
         }
@@ -428,8 +429,11 @@ function renderTopPlayers() {
 function renderFeaturedGames() {
     const container = document.getElementById('featured-games-section');
 
-    // Filter videos where 首頁置放 = "Yes"
-    const featuredVideos = gameVideos.filter(v => v['首頁置放'] && v['首頁置放'].toLowerCase() === 'yes');
+    // Filter videos where 首頁置放 = "Yes" (case insensitive, trim)
+    const featuredVideos = gameVideos.filter(v => {
+        const featured = v['首頁置放'];
+        return featured && ['yes', 'y', 'true', '是'].includes(featured.trim().toLowerCase());
+    });
 
     if (featuredVideos.length === 0) {
         container.innerHTML = '';
@@ -463,8 +467,11 @@ function renderFeaturedGames() {
         const card = document.createElement('div');
         card.className = 'featured-game-card';
 
-        const videoUrl = video['影片連結'];
-        const videoTitle = video['影片標題'] || '觀看影片';
+        const videoUrl = video['連結'];
+        const isPhoto = video['類型'] === '照片';
+        const defaultTitle = isPhoto ? '觀看照片' : '觀看影片';
+        const videoTitle = video['影片標題'] || defaultTitle;
+        const btnClass = isPhoto ? 'featured-photo-btn' : 'featured-video-btn'; // You might need to add css for this, or reuse video-btn
 
         card.innerHTML = `
             <div class="featured-game-date">${game['日期']}</div>
@@ -474,7 +481,7 @@ function renderFeaturedGames() {
                 <div class="featured-team">${awayTeam['球隊名稱']}</div>
             </div>
             <div class="featured-game-actions">
-                ${videoUrl ? `<a href="${videoUrl}" target="_blank" class="featured-video-btn">${videoTitle}</a>` : ''}
+                ${videoUrl ? `<a href="${videoUrl}" target="_blank" class="${btnClass}">${videoTitle}</a>` : ''}
                 ${gameTeamStats[gameId] ? `<button class="details-btn" onclick="openGameModal('${gameId}')">查看數據</button>` : ''}
             </div>
         `;
@@ -694,14 +701,29 @@ function renderSchedule(teamId) {
         const opponent = allTeams.find(t => t['球隊ID'] === opponentId) || { '球隊名稱': opponentId };
 
         // Find video links for this game
-        const videoData = gameVideos.filter(v => v['賽事編號'] === game['賽事編號']);
+        const gameLinks = gameVideos.filter(v => v['賽事編號'] === game['賽事編號']);
+
         let videoLinks = '';
-        if (videoData.length > 0) {
-            videoLinks = videoData.map(v => {
-                const label = v['影片標題'] || '影片';
-                const url = v['影片連結'];
-                return url ? `<a href=\"${url}\" target=\"_blank\" class=\"video-link\">${label}</a>` : '';
-            }).filter(link => link).join(' ');
+        let photoLinks = '';
+
+        if (gameLinks.length > 0) {
+            // Filter Videos
+            videoLinks = gameLinks
+                .filter(v => !v['類型'] || v['類型'] === '影片')
+                .map(v => {
+                    const label = v['影片標題'] || '影片';
+                    const url = v['連結'];
+                    return url ? `<a href="${url}" target="_blank" class="video-link">${label}</a>` : '';
+                }).filter(link => link).join(' ');
+
+            // Filter Photos
+            photoLinks = gameLinks
+                .filter(v => v['類型'] === '照片')
+                .map(v => {
+                    const label = v['影片標題'] || '照片'; // Fallback label '照片' if title missing
+                    const url = v['連結']; // Assuming link is in '連結' column even for photos
+                    return url ? `<a href="${url}" target="_blank" class="photo-link">${label}</a>` : '';
+                }).filter(link => link).join(' ');
         }
 
         const dateTimeParts = game['日期'].trim().split(/\s+/);
@@ -718,10 +740,11 @@ function renderSchedule(teamId) {
             <td>${game['主隊得分']} - ${game['客隊得分']}</td>
             <td>
                 ${game['賽事編號'] && gameTeamStats[game['賽事編號']] ?
-                `<button class="details-btn" onclick="openGameModal('${game['賽事編號']}')">View Stats</button>` :
+                `<button class="details-btn" onclick="openGameModal('${game['賽事編號']}')">查看</button>` :
                 '-'}
             </td>
             <td>${videoLinks || '-'}</td>
+            <td>${photoLinks || '-'}</td>
         `;
         tableBody.appendChild(row);
     });
@@ -961,14 +984,29 @@ function renderLeagueSchedule() {
         const awayTeam = allTeams.find(t => t['球隊ID'] === game['客隊ID']) || { '球隊名稱': game['客隊ID'] };
 
         // Reuse video logic
-        const videoData = gameVideos.filter(v => v['賽事編號'] === game['賽事編號']);
+        const gameLinks = gameVideos.filter(v => v['賽事編號'] === game['賽事編號']);
+
         let videoLinks = '';
-        if (videoData.length > 0) {
-            videoLinks = videoData.map(v => {
-                const label = v['影片標題'] || '影片';
-                const url = v['影片連結'];
-                return url ? `<a href="${url}" target="_blank" class="video-link">${label}</a>` : '';
-            }).filter(link => link).join(' ');
+        let photoLinks = '';
+
+        if (gameLinks.length > 0) {
+            // Filter Videos
+            videoLinks = gameLinks
+                .filter(v => !v['類型'] || v['類型'] === '影片')
+                .map(v => {
+                    const label = v['影片標題'] || '影片';
+                    const url = v['連結'];
+                    return url ? `<a href="${url}" target="_blank" class="video-link">${label}</a>` : '';
+                }).filter(link => link).join(' ');
+
+            // Filter Photos
+            photoLinks = gameLinks
+                .filter(v => v['類型'] === '照片')
+                .map(v => {
+                    const label = v['影片標題'] || '照片';
+                    const url = v['連結'];
+                    return url ? `<a href="${url}" target="_blank" class="photo-link">${label}</a>` : '';
+                }).filter(link => link).join(' ');
         }
 
         // Score Display
@@ -991,10 +1029,11 @@ function renderLeagueSchedule() {
             <td>${awayTeam['球隊名稱']}</td>
             <td>
                 ${game['賽事編號'] && gameTeamStats[game['賽事編號']] ?
-                `<button class="details-btn" onclick="openGameModal('${game['賽事編號']}')">View Stats</button>` :
+                `<button class="details-btn" onclick="openGameModal('${game['賽事編號']}')">查看</button>` :
                 '-'}
             </td>
             <td>${videoLinks || '-'}</td>
+            <td>${photoLinks || '-'}</td>
         `;
         tableBody.appendChild(row);
     });

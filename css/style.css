@@ -790,6 +790,36 @@ footer {
     color: var(--bg-color);
 }
 
+.featured-video-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #e11d48;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: background 0.3s;
+}
+
+.featured-video-btn:hover {
+    background: #be123c;
+}
+
+.featured-photo-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #0ea5e9;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: background 0.3s;
+}
+
+.featured-photo-btn:hover {
+    background: #0284c7;
+}
+
 @media (max-width: 600px) {
     .season-selector-wrapper {
         flex-direction: column;
@@ -1137,8 +1167,27 @@ footer {
     box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5);
 }
 
+.featured-photo-btn {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary-color), #ff8787);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.featured-photo-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5);
+}
+
 /* Video Links in Schedule Table */
-.video-link {
+.video-link,
+.photo-link {
     color: var(--secondary-color);
     text-decoration: none;
     font-weight: 600;
@@ -1150,7 +1199,8 @@ footer {
     margin: 0.25rem;
 }
 
-.video-link:hover {
+.video-link:hover,
+.photo-link:hover {
     background: rgba(78, 205, 196, 0.2);
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(78, 205, 196, 0.3);
