@@ -81,7 +81,7 @@ Detailed quarter-by-quarter scores for each team in a game.
 
 #### 6. Player Stats (`player_stats`)
 Individual player box scores for each game.
-- **Columns**: `賽事編號`, `球隊ID`, `球員ID`, `得分`, `兩分球投`, `兩分球進`, `三分球投`, `三分球進`, `罰球投`, `罰球進`, `進攻籃板`, `防守籃板`, `籃板`, `助攻`, `抄截`, `阻攻`, `犯規`, `失誤`
+- **Columns**: `賽事編號`, `球隊ID`, `球員ID`, `得分`, `兩分進球`, `兩分不進`, `三分進球`, `三分不進`, `罰球進球`, `罰球不進`, `進攻籃板`, `防守籃板`, `籃板`, `助攻`, `抄截`, `阻攻`, `犯規`, `失誤`
 
 ## Local Development
 
