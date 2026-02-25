@@ -464,7 +464,7 @@ footer {
     padding: 2rem;
     border: 1px solid var(--secondary-color);
     width: 90%;
-    max-width: 1000px;
+    max-width: 2000px;
     border-radius: 1rem;
     position: relative;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
@@ -1064,6 +1064,12 @@ footer {
     z-index: 2000;
 }
 
+/* Ensure detail modals appear on top of other modals */
+#game-modal,
+#player-modal {
+    z-index: 3000;
+}
+
 /* Featured Games Section */
 .featured-games-section {
     margin-top: 3rem;
@@ -1556,4 +1562,12 @@ footer {
     color: var(--text-color);
     font-size: 1rem;
     line-height: 1.6;
+}
+/* Team Header Row in stats table */
+.team-row-header {
+    background: #334155 !important;
+    color: white;
+    font-weight: 700;
+    text-align: left !important;
+    padding-left: 1rem !important;
 }

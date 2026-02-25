@@ -748,13 +748,18 @@ function renderSchedule(teamId) {
         const time = dateTimeParts[1] || '';
         const location = game['地點'] || '';
 
+        let scoreDisplay = '-';
+        if (!isNaN(homeScore) && !isNaN(awayScore)) {
+            scoreDisplay = `${game['主隊得分']} - ${game['客隊得分']}`;
+        }
+
         row.innerHTML = `
             <td>${date}</td>
             <td>${time}</td>
             <td>${location}</td>
             <td>${opponent['球隊名稱']}</td>
             <td class="${resultClass}">${result}</td>
-            <td>${game['主隊得分']} - ${game['客隊得分']}</td>
+            <td>${scoreDisplay}</td>
             <td>
                 ${game['賽事編號'] && gameTeamStats[game['賽事編號']] ?
                 `<button class="details-btn" onclick="openGameModal('${game['賽事編號']}')">查看</button>` :
@@ -777,7 +782,7 @@ function openPlayerModal(playerId) {
         if (s) {
             let game = games.find(g => g['賽事編號'] === gameId);
             if (game) {
-                const playerTeamId = player['球隊ID'];
+                const playerTeamId = s['球隊ID'];
                 const isHome = game['主隊ID'] === playerTeamId;
                 const opponentId = isHome ? game['客隊ID'] : game['主隊ID'];
                 const opponent = allTeams.find(t => t['球隊ID'] === opponentId) || { '球隊名稱': opponentId };
@@ -851,6 +856,8 @@ function openGameModal(gameId) {
     qBody.innerHTML = '';
     tStats.forEach(ts => {
         const team = allTeams.find(t => t['球隊ID'] === ts['球隊ID']) || { '球隊名稱': ts['球隊ID'] };
+        const total = (parseInt(ts['第一節']) || 0) + (parseInt(ts['第二節']) || 0) + (parseInt(ts['第三節']) || 0) + (parseInt(ts['第四節']) || 0);
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${team['球隊名稱']}</td>
@@ -858,6 +865,7 @@ function openGameModal(gameId) {
             <td>${ts['第二節']}</td>
             <td>${ts['第三節']}</td>
             <td>${ts['第四節']}</td>
+            <td><strong>${total}</strong></td>
         `;
         qBody.appendChild(tr);
     });
@@ -865,31 +873,57 @@ function openGameModal(gameId) {
     const bBody = document.querySelector('#box-score-table tbody');
     bBody.innerHTML = '';
     if (pStats) {
+        // Group players by team and sort by points descending
+        const playersByTeam = {};
         pStats.forEach(ps => {
-            const player = players.find(p => p['球員ID'] === ps['球員ID']) || { '球員姓名': ps['球員ID'] };
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${player['球員姓名']}</td>
-                <td>${ps['得分']}</td>
-                <td>${ps['兩分進球'] || '-'}</td>
-                <td>${ps['兩分不進'] || '-'}</td>
-                <td>${(Number(ps['兩分進球']) + Number(ps['兩分不進'])) > 0 ? (Number(ps['兩分進球']) / (Number(ps['兩分進球']) + Number(ps['兩分不進'])) * 100).toFixed(1) + '%' : '-'}</td>
-                <td>${ps['三分進球'] || '-'}</td>
-                <td>${ps['三分不進'] || '-'}</td>
-                <td>${(Number(ps['三分進球']) + Number(ps['三分不進'])) > 0 ? (Number(ps['三分進球']) / (Number(ps['三分進球']) + Number(ps['三分不進'])) * 100).toFixed(1) + '%' : '-'}</td>
-                <td>${ps['罰球進球'] || '-'}</td>
-                <td>${ps['罰球不進'] || '-'}</td>
-                <td>${(Number(ps['罰球進球']) + Number(ps['罰球不進'])) > 0 ? (Number(ps['罰球進球']) / (Number(ps['罰球進球']) + Number(ps['罰球不進'])) * 100).toFixed(1) + '%' : '-'}</td>
-                <td>${ps['進攻籃板'] || '-'}</td>
-                <td>${ps['防守籃板'] || '-'}</td>
-                <td>${ps['籃板']}</td>
-                <td>${ps['助攻']}</td>
-                <td>${ps['抄截']}</td>
-                <td>${ps['阻攻']}</td>
-                <td>${ps['犯規']}</td>
-                <td>${ps['失誤']}</td>
-            `;
-            bBody.appendChild(tr);
+            const player = players.find(p => p['球員ID'] === ps['球員ID']) || { '球員姓名': ps['球員ID'], '球隊ID': ps['球隊ID'] };
+            const teamId = ps['球隊ID'] || (player ? player['球隊ID'] : 'Unknown');
+            if (!playersByTeam[teamId]) playersByTeam[teamId] = [];
+            playersByTeam[teamId].push({ ...ps, playerName: player['球員姓名'] });
+        });
+
+        // Get team IDs in order of appearance in tStats
+        const teamOrder = tStats.map(ts => ts['球隊ID']);
+
+        teamOrder.forEach(teamId => {
+            const teamPlayers = playersByTeam[teamId];
+            if (!teamPlayers) return;
+
+            // Sort players by points descending
+            teamPlayers.sort((a, b) => (parseInt(b['得分']) || 0) - (parseInt(a['得分']) || 0));
+
+            // Add team header row
+            const team = allTeams.find(t => t['球隊ID'] === teamId) || { '球隊名稱': teamId };
+            const headerTr = document.createElement('tr');
+            headerTr.className = 'team-row-header';
+            headerTr.innerHTML = `<td colspan="20">${team['球隊名稱']}</td>`;
+            bBody.appendChild(headerTr);
+
+            teamPlayers.forEach(ps => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${ps.playerName}</td>
+                    <td>${ps['得分']}</td>
+                    <td>${ps['兩分進球'] || '-'}</td>
+                    <td>${ps['兩分不進'] || '-'}</td>
+                    <td>${(Number(ps['兩分進球']) + Number(ps['兩分不進'])) > 0 ? (Number(ps['兩分進球']) / (Number(ps['兩分進球']) + Number(ps['兩分不進'])) * 100).toFixed(1) + '%' : '-'}</td>
+                    <td>${ps['三分進球'] || '-'}</td>
+                    <td>${ps['三分不進'] || '-'}</td>
+                    <td>${(Number(ps['三分進球']) + Number(ps['三分不進'])) > 0 ? (Number(ps['三分進球']) / (Number(ps['三分進球']) + Number(ps['三分不進'])) * 100).toFixed(1) + '%' : '-'}</td>
+                    <td>${ps['罰球進球'] || '-'}</td>
+                    <td>${ps['罰球不進'] || '-'}</td>
+                    <td>${(Number(ps['罰球進球']) + Number(ps['罰球不進'])) > 0 ? (Number(ps['罰球進球']) / (Number(ps['罰球進球']) + Number(ps['罰球不進'])) * 100).toFixed(1) + '%' : '-'}</td>
+                    <td>${ps['進攻籃板'] || '-'}</td>
+                    <td>${ps['防守籃板'] || '-'}</td>
+                    <td>${ps['籃板']}</td>
+                    <td>${ps['助攻']}</td>
+                    <td>${ps['抄截']}</td>
+                    <td>${ps['阻攻']}</td>
+                    <td>${ps['犯規']}</td>
+                    <td>${ps['失誤']}</td>
+                `;
+                bBody.appendChild(tr);
+            });
         });
     }
 
