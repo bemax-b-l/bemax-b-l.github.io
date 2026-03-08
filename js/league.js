@@ -369,62 +369,122 @@ function renderTopPlayers() {
     `;
     container.appendChild(header);
 
-    const categories = {};
+    const playersByGroup = {};
     topPlayersData.forEach(item => {
-        const type = item['排名類型'];
-        if (!categories[type]) categories[type] = [];
-        categories[type].push(item);
+        // 利用 top_players 新增的「組別」欄位
+        let group = item['組別'];
+
+        // 備案：萬一漏填組別，則從 allTeams 內反查
+        if (!group || group.trim() === '') {
+            const team = allTeams.find(t => t['球隊名稱'] === item['球隊名稱'] || t['球隊ID'] === item['球隊ID']);
+            group = team ? (team['組別'] || '其他') : '其他';
+        }
+
+        if (!playersByGroup[group]) playersByGroup[group] = [];
+        playersByGroup[group].push(item);
     });
 
-    const categoryConfig = {
-        '得分排行': { icon: '🏀', label: '得分王' },
-        '籃板排行': { icon: '🙌', label: '籃板王' },
-        '助攻排行': { icon: '🤝', label: '助攻王' },
-        '抄截排行': { icon: '⚡', label: '抄截王' },
-        '火鍋排行': { icon: '✋', label: '火鍋王' }
-    };
+    const sortedGroups = Object.keys(playersByGroup).sort();
 
-    const grid = document.createElement('div');
-    grid.className = 'top-players-grid';
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'top-players-tabs';
 
-    for (const [type, catPlayers] of Object.entries(categories)) {
-        const config = categoryConfig[type] || { icon: '🏆', label: type };
-        catPlayers.sort((a, b) => parseInt(a['排名']) - parseInt(b['排名']));
+    const panesContainer = document.createElement('div');
+    panesContainer.className = 'top-players-panes';
 
-        const card = document.createElement('div');
-        card.className = 'top-player-card';
+    sortedGroups.forEach((group, index) => {
+        const tabBtn = document.createElement('button');
+        tabBtn.className = `top-players-tab-btn ${index === 0 ? 'active' : ''}`;
+        tabBtn.textContent = group;
+        tabBtn.onclick = () => switchTopPlayersTab(group);
+        tabsContainer.appendChild(tabBtn);
 
-        let listHtml = '';
-        catPlayers.slice(0, 3).forEach(p => {
-            const rankClass = `rank-${p['排名']}`;
-            const value = p['平均得分'] || p['數值'] || Object.values(p).pop();
+        const pane = document.createElement('div');
+        pane.className = `top-players-pane ${index === 0 ? 'active' : ''}`;
+        pane.id = `tp-pane-${group}`;
 
-            listHtml += `
-                <div class="top-player-item" onclick="openPlayerModal('${p['球員ID']}')" style="cursor: pointer;">
-                    <div class="tp-rank ${rankClass}">${p['排名']}</div>
-                    <div class="tp-info">
-                        <div class="tp-name">${p['球員姓名']}</div>
-                        <div class="tp-team">${p['球隊名稱']}</div>
-                    </div>
-                    <div class="tp-value">${value}</div>
-                </div>
-            `;
+        const categories = {};
+        playersByGroup[group].forEach(item => {
+            const type = item['排名類型'];
+            if (!categories[type]) categories[type] = [];
+            categories[type].push(item);
         });
 
-        card.innerHTML = `
-            <div class="top-player-header">
-                <div class="top-player-icon">${config.icon}</div>
-                <div class="top-player-title">${config.label}</div>
-            </div>
-            <div class="top-player-list">
-                ${listHtml}
-            </div>
-        `;
-        grid.appendChild(card);
-    }
+        const categoryConfig = {
+            '得分排行': { icon: '🏀', label: '得分王' },
+            '籃板排行': { icon: '🙌', label: '籃板王' },
+            '助攻排行': { icon: '🤝', label: '助攻王' },
+            '抄截排行': { icon: '⚡', label: '抄截王' },
+            '火鍋排行': { icon: '✋', label: '火鍋王' }
+        };
 
-    container.appendChild(grid);
+        const grid = document.createElement('div');
+        grid.className = 'top-players-grid';
+
+        for (const [type, catPlayers] of Object.entries(categories)) {
+            const config = categoryConfig[type] || { icon: '🏆', label: type };
+
+            catPlayers.sort((a, b) => {
+                const valA = parseFloat(a['平均得分'] || a['數值'] || Object.values(a).pop() || 0);
+                const valB = parseFloat(b['平均得分'] || b['數值'] || Object.values(b).pop() || 0);
+                return valB - valA;
+            });
+
+            const card = document.createElement('div');
+            card.className = 'top-player-card';
+
+            let listHtml = '';
+            catPlayers.slice(0, 3).forEach((p, idx) => {
+                const groupRank = idx + 1;
+                const rankClass = `rank-${groupRank}`;
+                const value = p['平均得分'] || p['數值'] || Object.values(p).pop();
+
+                listHtml += `
+                    <div class="top-player-item" onclick="openPlayerModal('${p['球員ID']}')" style="cursor: pointer;">
+                        <div class="tp-rank ${rankClass}">${groupRank}</div>
+                        <div class="tp-info">
+                            <div class="tp-name">${p['球員姓名']}</div>
+                            <div class="tp-team">${p['球隊名稱']}</div>
+                        </div>
+                        <div class="tp-value">${value}</div>
+                    </div>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="top-player-header">
+                    <div class="top-player-icon">${config.icon}</div>
+                    <div class="top-player-title">${config.label}</div>
+                </div>
+                <div class="top-player-list">
+                    ${listHtml}
+                </div>
+            `;
+            grid.appendChild(card);
+        }
+
+        pane.appendChild(grid);
+        panesContainer.appendChild(pane);
+    });
+
+    container.appendChild(tabsContainer);
+    container.appendChild(panesContainer);
 }
+
+window.switchTopPlayersTab = function (activeGroup) {
+    const tabs = document.querySelectorAll('.top-players-tab-btn');
+    const panes = document.querySelectorAll('.top-players-pane');
+
+    tabs.forEach(tab => {
+        if (tab.textContent === activeGroup) tab.classList.add('active');
+        else tab.classList.remove('active');
+    });
+
+    panes.forEach(pane => {
+        if (pane.id === `tp-pane-${activeGroup}`) pane.classList.add('active');
+        else pane.classList.remove('active');
+    });
+};
 
 function renderFeaturedGames() {
     const container = document.getElementById('featured-games-section');
