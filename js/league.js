@@ -916,7 +916,8 @@ function openGameModal(gameId) {
     qBody.innerHTML = '';
     tStats.forEach(ts => {
         const team = allTeams.find(t => t['球隊ID'] === ts['球隊ID']) || { '球隊名稱': ts['球隊ID'] };
-        const total = (parseInt(ts['第一節']) || 0) + (parseInt(ts['第二節']) || 0) + (parseInt(ts['第三節']) || 0) + (parseInt(ts['第四節']) || 0);
+        const total = (parseInt(ts['第一節']) || 0) + (parseInt(ts['第二節']) || 0) + (parseInt(ts['第三節']) || 0) + (parseInt(ts['第四節']) || 0) + (parseInt(ts['OT1']) || 0);
+        const ot1Display = ts['OT1'] !== undefined && ts['OT1'] !== '' ? ts['OT1'] : '-';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -925,6 +926,7 @@ function openGameModal(gameId) {
             <td>${ts['第二節']}</td>
             <td>${ts['第三節']}</td>
             <td>${ts['第四節']}</td>
+            <td>${ot1Display}</td>
             <td><strong>${total}</strong></td>
         `;
         qBody.appendChild(tr);

@@ -77,7 +77,7 @@ Schedule and final scores for all games.
 
 #### 5. Team Stats (`team_stats`)
 Detailed quarter-by-quarter scores for each team in a game.
-- **Columns**: `賽事編號`, `球隊ID`, `第一節`, `第二節`, `第三節`, `第四節`, `總分`
+- **Columns**: `賽事編號`, `球隊ID`, `第一節`, `第二節`, `第三節`, `第四節`, `OT1`, `總分`
 
 #### 6. Player Stats (`player_stats`)
 Individual player box scores for each game.
