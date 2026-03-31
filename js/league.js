@@ -15,6 +15,7 @@ let topPlayersData = []; // Cache for top players
 let gameVideos = []; // Cache for game videos
 let sponsors = []; // Cache for sponsors
 let documentations = []; // Cache for documentation (rules, terms, etc.)
+let campsData = []; // Cache for camps data
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -77,8 +78,8 @@ async function loadSeasons() {
             team_stats: row.team_stats,
             player_stats: row.player_stats,
             top_players: row.top_players,
-            top_players: row.top_players,
-            game_links: row.game_links || row.game_videos
+            game_links: row.game_links || row.game_videos,
+            camps: row.camps
         }
     }));
 
@@ -208,6 +209,12 @@ async function loadSeasonData(season) {
             promises.push(fetch(paths.game_links).then(r => r.text()).then(t => gameVideos = parseCSV(t)));
         } else {
             gameVideos = [];
+        }
+
+        if (paths.camps) {
+            promises.push(fetch(paths.camps).then(r => r.text()).then(t => campsData = parseCSV(t)));
+        } else {
+            campsData = [];
         }
 
         await Promise.all(promises);
@@ -1054,8 +1061,63 @@ function setupDocModal() {
         if (event.target == gameModal) gameModal.style.display = "none";
         const scheduleModal = document.getElementById('schedule-modal');
         if (event.target == scheduleModal) scheduleModal.style.display = "none";
+        const campModal = document.getElementById('camp-modal');
+        if (event.target == campModal) campModal.style.display = "none";
     };
 }
+
+// Camp Modal Logic
+window.openCampModal = function () {
+    const modal = document.getElementById('camp-modal');
+    if (!modal || campsData.length === 0) {
+        alert('目前無籃球訓練營資訊');
+        return;
+    }
+
+    if (!modal.dataset.setup) {
+        const closeBtn = modal.querySelector('.close-modal');
+        if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+        modal.dataset.setup = "true";
+    }
+
+    const titleEl = document.getElementById('camp-modal-title');
+    const bodyEl = document.getElementById('camp-modal-body');
+
+    // First row can define Title, Time, Location, Content
+    const campInfo = campsData[0];
+    if (campInfo['活動名稱']) titleEl.textContent = campInfo['活動名稱'];
+
+    let html = '';
+    html += '<div class="camp-info-grid" style="display: grid; grid-template-columns: 60px 1fr; gap: 10px; margin-bottom: 20px;">';
+    if (campInfo['時間']) html += '<strong>時間：</strong><div>' + campInfo['時間'] + '</div>';
+    if (campInfo['地點']) html += '<strong>地點：</strong><div>' + campInfo['地點'] + '</div>';
+    if (campInfo['內容']) html += '<strong>內容：</strong><div>' + campInfo['內容'].replace(/\\n/g, '<br>') + '</div>';
+    html += '</div>';
+
+    // Collect related links/media from all rows
+    let mediaHtml = '';
+    campsData.forEach((row, index) => {
+        const videoUrl = row['影片'];
+        const photoUrl = row['照片'];
+        const namePrefix = row['活動名稱'] ? (campsData.length > 1 ? row['活動名稱'] + ' ' : '') : '';
+
+        if (videoUrl && videoUrl.trim() !== '') {
+            mediaHtml += '<a href="' + videoUrl + '" target="_blank" class="featured-video-btn" style="text-decoration:none;">' + namePrefix + '影片</a>';
+        }
+        if (photoUrl && photoUrl.trim() !== '') {
+            mediaHtml += '<a href="' + photoUrl + '" target="_blank" class="featured-photo-btn" style="text-decoration:none;">' + namePrefix + '照片</a>';
+        }
+    });
+
+    if (mediaHtml !== '') {
+        html += '<h3>相關連結 / 影音</h3><div class="camp-media" style="display:flex; flex-wrap:wrap; gap:10px; margin-top: 10px;">';
+        html += mediaHtml;
+        html += '</div>';
+    }
+
+    bodyEl.innerHTML = html;
+    modal.style.display = 'block';
+};
 
 // Schedule Modal Logic
 window.openScheduleModal = function () {
